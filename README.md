@@ -28,10 +28,11 @@ verifyMerkleProof(hashed_data[1], merkle_proof, merkle_root)
 print(generateCircomInput(hashed_data[1], merkle_proof, merkle_root))
 ```
 
-## Prodocing the proof
+## Producing the proof
 Once the `input.json` file is acquired, the rest is taken care of by
 circom and snarkjs, as dictated [here](https://github.com/iden3/snarkjs#guide).
+Note that the calculation of the zero-knowledge proof is very intense.
 
 ## TO-DO
-[_] Check that circom inputs are binary arrays,
-[_] Enable Python to produce Merkle proofs for arrays of any size.
+- [ ] Check that circom inputs are binary arrays,
+- [ ] Enable Python to produce Merkle proofs for arrays of any size.
