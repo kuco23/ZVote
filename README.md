@@ -1,6 +1,8 @@
 ## Merkle Tree Circom
 This is a small implementation of a merkle proof in circom, 
 along with a compatible implementation of merkle proofs in python.
+The code implements two hash functions - sha256 and poseidon,
+with the latter being specifically designed to be snark friendly.
 
 ## Producing circom input
 Usually you start with a list of hashes that hide (or represent) some data
@@ -31,7 +33,7 @@ print(generateCircomInput(hashed_data[1], merkle_proof, merkle_root))
 ## Producing the proof
 Once the `input.json` file is acquired, the rest is taken care of by
 circom and snarkjs, as dictated [here](https://github.com/iden3/snarkjs#guide).
-Note that the calculation of the zero-knowledge proof is very intense.
+Note that when using sha256 the zero-knowledge proof calculation is very intense.
 
 ## TO-DO
 - [ ] Check that circom inputs are binary arrays,

@@ -40,4 +40,4 @@ template MerkleProof (K) {
 	poseidon[0].out === root;
 }
 
-component main {public [root]} = MerkleProof(3);
+component main {public [root]} = MerkleProof(20);
