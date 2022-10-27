@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# snarkjs
+*.r1cs
+*.wtns
+*_js
+*/input.json

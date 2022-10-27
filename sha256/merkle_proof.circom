@@ -1,8 +1,25 @@
 pragma circom 2.0.0;
 
-include "./circomlib/circuits/sha256/sha256.circom";
-include "./circomlib/circuits/gates.circom";
-include "./equal_to_one.circom";
+include "../circomlib/circuits/sha256/sha256.circom";
+include "../circomlib/circuits/gates.circom";
+include "../circomlib/circuits/gates.circom";
+
+template EqualToOneOf(N) {
+    signal input test[N];
+    signal input pos1[N];
+    signal input pos2[N];
+
+    component mand1 = MultiAND(N);
+	component mand2 = MultiAND(N);
+	for (var i = 0; i < N; i++) {
+		mand1.in[i] <== 1 - test[i] + pos1[i];
+		mand2.in[i] <== 1 - test[i] + pos2[i];
+	}
+	component or = OR();
+	or.a <== mand1.out;
+	or.b <== mand2.out;
+	or.out === 1;
+}
 
 template MerkleProof (K) {
 	var N = 256;
@@ -16,7 +33,7 @@ template MerkleProof (K) {
 
 	// check that leaf is equal to either 
 	// left or right bottom proof element
-	component leafok = EqualToOne(N);
+	component leafok = EqualToOneOf(N);
 	for (var n = 0; n < N; n++) {
 		leafok.test[n] <== leaf[n];
 		leafok.pos1[n] <== proof[K-1][0][n];
@@ -33,7 +50,7 @@ template MerkleProof (K) {
 			sha[k].in[N + n] <== proof[k][1][n];
 		}
 		if (k > 0) {
-			eto[k-1] = EqualToOne(N);
+			eto[k-1] = EqualToOneOf(N);
 			for (var n = 0; n < N; n++) {
 				eto[k-1].test[n] <== sha[k].out[n];
 				eto[k-1].pos1[n] <== proof[k-1][0][n];
