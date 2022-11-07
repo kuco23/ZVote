@@ -3,19 +3,29 @@ from functools import reduce
 from collections import deque
 from json import dumps
 
-def getMerkleTree(fun, data):
-    tree_depth = int(log(len(data), 2)) + 1
-    merkle_tree = deque([data])
-    for _ in range(tree_depth-1):
-        level = merkle_tree[0]
-        merkle_tree.appendleft([
-            fun(level[2*j], level[2*j+1])
-            for j in range(len(level) // 2)
-        ])
+
+def merkleTree(data, depth, fun):
+    ndata = len(data)
+
+    merkle_tree = [dict() for _ in range(depth)]
+    for i in range(ndata):
+        merkle_tree[depth-1][i] = data[i]
+
+    for i in reversed(range(1, depth)):
+        lim = ndata // 2
+        if ndata % 2 != 0: lim += 1
+        for j in range(lim):
+            if 2 * j + 1 == ndata: 
+                merkle_tree[i][2 *j + 1] = merkle_tree[i][2*j]
+            merkle_tree[i-1][j] = fun(
+                merkle_tree[i][2*j], 
+                merkle_tree[i][2*j+1]
+            )
+        ndata = lim
+
     return merkle_tree
 
-
-def getMerkleProof(merkle_tree, i):
+def merkleProof(merkle_tree, i):
     tree_depth = len(merkle_tree)
     merkle_proof = [None] * (tree_depth - 1)
     for j in reversed(range(1, tree_depth)):
@@ -26,7 +36,7 @@ def getMerkleProof(merkle_tree, i):
     return merkle_proof
 
 
-def verifyMerkleProof(fun, leaf, merkle_proof, merkle_root):
+def verifyMerkleProof(leaf, merkle_proof, merkle_root, fun):
     assert leaf in merkle_proof[-1]
     for i in reversed(range(len(merkle_proof))):
         h1, h2 = merkle_proof[i]
@@ -58,22 +68,26 @@ def generateCircomInputSha256(leaf, merkle_proof, merkle_root):
 
 if __name__ == '__main__':
 
-    from sha256.sha256 import sha256
+    from sha256.sha256 import sha256, bitarray
     from poseidon.poseidon import poseidon
 
-    fun_sha = lambda *ins: reduce(str.__add__, ins, '')
+    fun_sha = lambda *ins: sha256(reduce(bitarray.__add__, ins))
     fun_pos = poseidon
 
+    TREE_DEPTH = 21
+    HASH_FUN = fun_pos
+    
     # length has to be power of 2
     data = list(range(8))
-    hashed_data = [poseidon(d) for d in data]
+    hashed_data = [HASH_FUN(d) for d in data]
 
     # proving poseidon(1) is in the merkle_tree
-    merkle_tree = getMerkleTree(fun_pos, hashed_data)
-    merkle_proof = getMerkleProof(merkle_tree, 1)
+    merkle_tree = merkleTree(hashed_data, TREE_DEPTH, HASH_FUN)
+    merkle_proof = merkleProof(merkle_tree, 1)
     merkle_root = merkle_tree[0][0]
     verifyMerkleProof(
-        fun_pos, hashed_data[1], merkle_proof, merkle_root)
+        hashed_data[1], merkle_proof, merkle_root, HASH_FUN)
 
     print(generateCircomInputPoseidon(
         hashed_data[1], merkle_proof, merkle_root))
+    

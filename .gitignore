@@ -132,4 +132,7 @@ dmypy.json
 *.r1cs
 *.wtns
 *_js
-*/input.json
+*.ptau
+*.Identifier
+*.zkey
+*.json

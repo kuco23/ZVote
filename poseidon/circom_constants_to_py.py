@@ -1,6 +1,6 @@
 # convert poseidon constants from circom to python
 
-generated_file_path = 'poseidon_constants.py'
+generated_file_path = 'constants.py'
 constants_file_path = '../circomlib/circuits/poseidon_constants.circom'
 
 open(generated_file_path, 'a').close()

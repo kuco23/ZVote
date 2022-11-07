@@ -1,8 +1,8 @@
 pragma circom 2.0.0;
 
-include "../circomlib/circuits/sha256/sha256.circom";
-include "../circomlib/circuits/gates.circom";
-include "../circomlib/circuits/gates.circom";
+include "./circomlib/circuits/sha256/sha256.circom";
+include "./circomlib/circuits/gates.circom";
+include "./circomlib/circuits/gates.circom";
 
 template EqualToOneOf(N) {
     signal input test[N];

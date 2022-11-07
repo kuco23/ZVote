@@ -36,5 +36,5 @@ circom and snarkjs, as dictated [here](https://github.com/iden3/snarkjs#guide).
 Note that when using sha256 the zero-knowledge proof calculation is very intense.
 
 ## TO-DO
-- [ ] Check that circom inputs are binary arrays,
+- [ ] Check that circom merkle tree inputs are binary arrays,
 - [ ] Enable Python to produce Merkle proofs for arrays of any size.
