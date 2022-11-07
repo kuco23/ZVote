@@ -1,6 +1,4 @@
-from math import log
 from functools import reduce
-from collections import deque
 from json import dumps
 
 
@@ -77,7 +75,6 @@ if __name__ == '__main__':
     TREE_DEPTH = 21
     HASH_FUN = fun_pos
     
-    # length has to be power of 2
     data = list(range(8))
     hashed_data = [HASH_FUN(d) for d in data]
 

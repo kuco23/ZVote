@@ -13,28 +13,36 @@ logs the (later private) proof along with the (always public) merkle root.
 The tools for generating this stuff are inside `merkle_proof.py` file and
 producing `input.json` is done as follows:
 ```python
-# has to be of power 2 length
-data = [
-    'a', 'b', 'c', 'd',
-    'e', 'f', 'g', 'h'
-]
-hashed_data = [sha256g(d) for d in data]
+from poseidon.poseidon import poseidon
 
-# proving sha256g('b') is in sha256g(data)
-merkle_tree = getMerkleTree(hashed_data)
-merkle_proof = getMerkleProof(merkle_tree, 1)
+# constants
+TREE_DEPTH = 21 # can save arrays of length up to 2^20
+HASH_FUN = poseidon # hashing function applied used by merkle tree
+
+# define secret data and deal publicly with hashes
+data = [123124152, 12312241, 518394148, 14191, 141323500091]
+hashed_data = [HASH_FUN(d) for d in data]
+
+# proving HASH_FUN(1) is in the merkle_tree
+merkle_tree = merkleTree(hashed_data, TREE_DEPTH, HASH_FUN)
+merkle_proof = merkleProof(merkle_tree, 1)
 merkle_root = merkle_tree[0][0]
-verifyMerkleProof(hashed_data[1], merkle_proof, merkle_root)
 
-# generating the circom's input.json
-print(generateCircomInput(hashed_data[1], merkle_proof, merkle_root))
+# check that the proof is ok
+verifyMerkleProof(
+    hashed_data[1], merkle_proof, merkle_root, HASH_FUN)
+
+# generate input.json that is used by circom
+print(generateCircomInputPoseidon(
+    hashed_data[1], merkle_proof, merkle_root))
 ```
 
 ## Producing the proof
 Once the `input.json` file is acquired, the rest is taken care of by
 circom and snarkjs, as dictated [here](https://github.com/iden3/snarkjs#guide).
-Note that when using sha256 the zero-knowledge proof calculation is very intense.
+Note that when using sha256 the zero-knowledge proof calculation is very intense
+(might not go through).
 
 ## TO-DO
 - [ ] Check that circom merkle tree inputs are binary arrays,
-- [ ] Enable Python to produce Merkle proofs for arrays of any size.
+- [x] Enable Python to produce Merkle proofs for arrays of any size.
