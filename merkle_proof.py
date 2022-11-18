@@ -45,7 +45,7 @@ def verifyMerkleProof(leaf, merkle_proof, merkle_root, fun):
                 f"a hash at level {i-1}")
         else:
             assert (hsh == merkle_root), (
-                "end hash doesn't mash the merkle root")
+                "end hash doesn't match the merkle root")
 
 
 def generateCircomInputPoseidon(leaf, merkle_proof, merkle_root):
@@ -88,3 +88,4 @@ if __name__ == '__main__':
     print(generateCircomInputPoseidon(
         hashed_data[1], merkle_proof, merkle_root))
     
+    print(hashed_data[0])

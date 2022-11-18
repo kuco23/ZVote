@@ -1,11 +1,7 @@
 from .constants import *
 
 p = 21888242871839275222246405745257275088548364400416034343698204186575808495617
-
-N_ROUNDS_P = [
-    56, 57, 56, 60, 60, 63, 64, 63,
-    60, 66, 60, 65, 70, 60, 64, 68
-]
+N_ROUNDS_P = [56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68]
 
 def sigma(inpt):
     return pow(inpt, 5, p)
@@ -39,6 +35,7 @@ def mixS(t, S, r, inpt):
     return out
 
 def poseidonEx(nins, nouts, ins, initialState):
+
     # set constants
     t = nins + 1
     nRoundsF = 8
@@ -49,64 +46,63 @@ def poseidonEx(nins, nouts, ins, initialState):
     P = POSEIDON_P(t)
 
     # set holders
-    ark_ = [0] * nRoundsF
-    sigmaF = [[0] * t for _ in range(nRoundsF)]
-    sigmaP = [0] * nRoundsP
-    mix_ = [0] * (nRoundsF - 1)
-    mixS_ = [0] * nRoundsP
+    sigmaF = [0] * t
     mixLast_ = [0] * nouts
-
+    mix_ = [0] * t
+    mixS_ = [0] * t
+    
+    # commonly used constant
     hnRoundsF = nRoundsF // 2
 
-    ark_[0] = ark( t, C, 0, [initialState] + ins[:(t-1)])
-    for r in range(nRoundsF//2-1):
+    ark_= ark(t, C, 0, [initialState] + ins[:(t-1)])
+    for r in range(hnRoundsF-1):
         for j in range(t):
             if r == 0:
-                sigmaF[r][j] = sigma(ark_[0][j])
+                sigmaF[j] = sigma(ark_[j])
             else:
-                sigmaF[r][j] = sigma(mix_[r-1][j])
+                sigmaF[j] = sigma(mix_[j])
         
-        ark_[r+1] = ark(t, C, (r+1)*t, sigmaF[r])
-        mix_[r] = mix(t, M, ark_[r+1])
+        ark_ = ark(t, C, (r+1)*t, sigmaF)
+        mix_ = mix(t, M, ark_)
     
     for j in range(t):
-        sigmaF[hnRoundsF-1][j] = sigma(mix_[hnRoundsF-2][j])
+        sigmaF[j] = sigma(mix_[j])
 
-    ark_[hnRoundsF] = ark(t, C, hnRoundsF*t, sigmaF[hnRoundsF-1])
-    mix_[hnRoundsF-1] = mix(t, P, ark_[hnRoundsF])
+    ark_ = ark(t, C, hnRoundsF*t, sigmaF)
+    mix_ = mix(t, P, ark_)
 
     for r in range(nRoundsP):
         if r == 0:
-            sigmaP[r] = sigma(mix_[hnRoundsF-1][0])
+            sigmaP = sigma(mix_[0])
         else:
-            sigmaP[r] = sigma(mixS_[r-1][0])
+            sigmaP = sigma(mixS_[0])
         
         inpt = [0] * t
         for j in range(t):
             if j == 0:
-                inpt[j] = sigmaP[r] + C[(hnRoundsF+1)*t + r]
+                inpt[j] = sigmaP + C[(hnRoundsF+1)*t + r]
             else:
                 if r == 0:
-                    inpt[j] = mix_[hnRoundsF-1][j]
+                    inpt[j] = mix_[j]
                 else:
-                    inpt[j] = mixS_[r-1][j]
-        mixS_[r] = mixS(t, S, r, inpt)
+                    inpt[j] = mixS_[j]
+        mixS_ = mixS(t, S, r, inpt)
     
     for r in range(hnRoundsF-1):
         for j in range(t):
             if r == 0:
-                sigmaF[hnRoundsF + r][j] = sigma(mixS_[nRoundsP-1][j])
+                sigmaF[j] = sigma(mixS_[j])
             else:
-                sigmaF[hnRoundsF + r][j] = sigma(mix_[hnRoundsF + r - 1][j])
+                sigmaF[j] = sigma(mix_[j])
 
-        ark_[hnRoundsF + r + 1] = ark(t, C, (hnRoundsF+1)*t + nRoundsP + r*t, sigmaF[hnRoundsF + r])
-        mix_[hnRoundsF + r] = mix(t, M, ark_[hnRoundsF + r + 1])
+        ark_= ark(t, C, (hnRoundsF+1)*t + nRoundsP + r*t, sigmaF)
+        mix_ = mix(t, M, ark_)
     
     for j in range(t):
-        sigmaF[nRoundsF - 1][j] = sigma(mix_[nRoundsF - 2][j])
+        sigmaF[j] = sigma(mix_[j])
 
     for i in range(nouts):
-        mixLast_[i] = mixLast(t, M, i, sigmaF[nRoundsF - 1])
+        mixLast_[i] = mixLast(t, M, i, sigmaF)
     
     return mixLast_
 
