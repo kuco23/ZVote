@@ -1,8 +1,0 @@
-from .constants import POSEIDON_S, POSEIDON_C, POSEIDON_M, POSEIDON_P
-
-t = 3
-
-C = POSEIDON_C(t)
-S = POSEIDON_S(t)
-M = POSEIDON_M(t)
-P = POSEIDON_P(t)

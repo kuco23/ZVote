@@ -89,3 +89,5 @@ if __name__ == '__main__':
         hashed_data[1], merkle_proof, merkle_root))
     
     print(hashed_data[0])
+
+    print(poseidon(0,1))

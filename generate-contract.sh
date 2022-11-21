@@ -8,4 +8,4 @@ snarkjs plonk setup $circuitName.r1cs $powersoftau.ptau ${circuitName}_final.zke
 snarkjs zkey export verificationkey ${circuitName}_final.zkey verification_key.json &&
 snarkjs plonk prove ${circuitName}_final.zkey witness.wtns proof.json public.json &&
 snarkjs plonk verify verification_key.json public.json proof.json &&
-snarkjs zkey export solidityverifier ${circuitName}_final.zkey contracts/${contractName}.sol
+snarkjs zkey export solidityverifier ${circuitName}_final.zkey contracts/implementation/${contractName}.sol

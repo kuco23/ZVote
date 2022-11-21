@@ -15,21 +15,24 @@ def mix(t, M, inpt):
         lc = 0
         for j in range(t):
             lc += M[j][i] * inpt[j] % p
-        out[i] = lc % p
+            lc %= p
+        out[i] = lc
     return out
 
 def mixLast(t, M, s, inpt):
     lc = 0
     for j in range(t):
         lc += M[j][s] * inpt[j] % p
-    return lc % p
+        lc %= p
+    return lc
 
 def mixS(t, S, r, inpt):
     out = [0] * t
     lc = 0
     for i in range(t):
         lc += S[(t * 2 - 1) * r + i] * inpt[i] % p
-    out[0] = lc % p
+        lc %= p
+    out[0] = lc
     for i in range(1, t):
         out[i] = (inpt[i] + inpt[0] * S[(t*2-1)*r + t + i - 1]) % p
     return out
@@ -80,7 +83,7 @@ def poseidonEx(nins, nouts, ins, initialState):
         inpt = [0] * t
         for j in range(t):
             if j == 0:
-                inpt[j] = sigmaP + C[(hnRoundsF+1)*t + r]
+                inpt[j] = (sigmaP + C[(hnRoundsF+1)*t + r]) % p
             else:
                 if r == 0:
                     inpt[j] = mix_[j]
@@ -94,7 +97,6 @@ def poseidonEx(nins, nouts, ins, initialState):
                 sigmaF[j] = sigma(mixS_[j])
             else:
                 sigmaF[j] = sigma(mix_[j])
-
         ark_= ark(t, C, (hnRoundsF+1)*t + nRoundsP + r*t, sigmaF)
         mix_ = mix(t, M, ark_)
     

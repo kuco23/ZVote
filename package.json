@@ -1,0 +1,44 @@
+{
+  "name": "merkle-tree-circom",
+  "version": "1.0.0",
+  "description": "This is a small implementation of a merkle proof in circom,  along with a compatible implementation of merkle proofs in python. The code implements two hash functions - sha256 and poseidon, with the latter being specifically designed to be snark friendly.",
+  "main": "index.js",
+  "scripts": {
+    "test": "yarn hardhat test",
+    "compile": "yarn hardhat compile"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kuco23/merkle-tree-circom.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kuco23/merkle-tree-circom/issues"
+  },
+  "homepage": "https://github.com/kuco23/merkle-tree-circom#readme",
+  "devDependencies": {
+    "@ethersproject/abi": "^5.4.7",
+    "@ethersproject/providers": "^5.4.7",
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@nomiclabs/hardhat-ethers": "^2.0.0",
+    "@nomiclabs/hardhat-etherscan": "^3.0.0",
+    "@nomiclabs/hardhat-truffle5": "^2.0.7",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@typechain/ethers-v5": "^10.1.0",
+    "@typechain/hardhat": "^6.1.2",
+    "@types/mocha": "^10.0.0",
+    "chai": "^4.2.0",
+    "ethers": "^5.4.7",
+    "hardhat": "^2.11.2",
+    "hardhat-gas-reporter": "^1.0.8",
+    "solidity-coverage": "^0.8.0",
+    "ts-node": "^10.9.1",
+    "tsc": "^2.0.4",
+    "typechain": "^8.1.0",
+    "typescript": "^4.8.4",
+    "web3": "^1.8.1"
+  }
+}

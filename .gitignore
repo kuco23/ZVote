@@ -135,4 +135,12 @@ dmypy.json
 *.ptau
 *.Identifier
 *.zkey
-*.json
+input.json
+public.json
+proof.json
+verification_key.json
+node_modules
+
+artifacts
+cache
+typechain-types
