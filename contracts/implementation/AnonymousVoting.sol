@@ -5,24 +5,33 @@ import "./TicketSpender.sol";
 import "./MerkleTree.sol";
 import "./Poseidon.sol";
 
-contract AnonymousVoting is TicketSpender, MerkleTree, Poseidon {
+struct VotingPeriod {
+    uint256 start;
+    uint256 end;
+}
+
+struct Winner {
+    uint256 option;
+    uint256 votes;
+}
+
+contract AnonymousVoting is MerkleTree, Poseidon {
     address[] public voters;
     mapping(uint256 => bool) internal nullified;
     mapping(address => bool) internal claimedTicket;
     mapping(uint256 => uint256) internal votes;
 
-    uint256 public currentWinner;
-    uint256 internal currentWinnerVotes;
+    Winner public winner;
+    VotingPeriod public votingPeriod;
 
-    uint256 public startVotingTime;
-    uint256 public endVotingTime;
+    TicketSpender ticketSpender;
 
     constructor(
+        TicketSpender _ticketSpender,
         address[] memory _voters,
         uint256 _startVotingTime,
         uint256 _endVotingTime,
-        uint256 _p, 
-        uint256 _t,
+        uint256 _p,
         uint256 _nRoundsF,
         uint256 _nRoundsP,
         uint256[] memory _C,
@@ -30,23 +39,29 @@ contract AnonymousVoting is TicketSpender, MerkleTree, Poseidon {
         uint256[][] memory _M,
         uint256[][] memory _P
     ) Poseidon(
-        _p, _t, _nRoundsF, _nRoundsP, 
+        _p, 3, _nRoundsF, _nRoundsP, 
         _C, _S, _M, _P
     ) { 
+        ticketSpender = _ticketSpender;
         voters = _voters;
-        startVotingTime = _startVotingTime;
-        endVotingTime = _endVotingTime;
+        votingPeriod = VotingPeriod(
+            _startVotingTime, _endVotingTime);
     }
 
     modifier beforeVotingPeriod() {
-        require(block.timestamp < startVotingTime);
+        require(block.timestamp < votingPeriod.start);
         _;
     }
     modifier duringVotingPeriod() {
         require(
-            block.timestamp >= startVotingTime && 
-            block.timestamp < endVotingTime
+            block.timestamp >= votingPeriod.start && 
+            block.timestamp < votingPeriod.end
         );
+        _;
+    }
+
+    modifier afterVotingPeriod() {
+        require(block.timestamp > votingPeriod.end);
         _;
     }
     
@@ -66,14 +81,20 @@ contract AnonymousVoting is TicketSpender, MerkleTree, Poseidon {
         uint256 serial, uint256 option, bytes memory proof
     ) external duringVotingPeriod {
         require(!nullified[serial], "ticket already spent");
-        bool result = verifyTicketSpending(proof, serial, merkleRoot());
+        bool result = ticketSpender.verifyTicketSpending(
+            proof, serial, merkleRoot());
         require(result == true, "incorrect proof");
         nullified[serial] = true;
         votes[option] += 1;
-        if (votes[option] > currentWinnerVotes) {
-            currentWinner = option;
-            currentWinnerVotes = votes[option];
+        if (votes[option] > winner.votes) {
+            winner.option = option;
+            winner.votes = votes[option];
         }
+    }
+
+    function getWinner(
+    ) external view afterVotingPeriod returns (uint256) {
+        return winner.option;
     }
 
     // so users can build their own merkle tree locally

@@ -7,19 +7,12 @@ import BN from "bn.js"
 import * as fs from "fs"
 import { poseidon } from "../poseidon/poseidon"
 import { 
-  p, nRoundsF, N_ROUNDS_P,
+  p, nRoundsF, N_ROUNDS_P, 
   POSEIDON_C, POSEIDON_S, POSEIDON_M, POSEIDON_P
 } from "../poseidon/constants"
 const snarkjs = require("snarkjs")
 
 const HOUR = 60*60
-
-const t = 3 // test for chosen t (range 2 to 17)
-const nRoundsP = N_ROUNDS_P[t - 2]
-const C = POSEIDON_C(t)!
-const S = POSEIDON_S(t)!
-const M = POSEIDON_M(t)!
-const P = POSEIDON_P(t)!
 
 function formatSolidityCalldata(calldata: string) {
   const i = calldata.indexOf(",")
@@ -35,21 +28,26 @@ describe("Tests for AnonymousVoting contract", async () => {
   let endVotingTime: number
 
   beforeEach(async() => {
+    voters = await ethers.getSigners()
     startVotingTime = Math.floor(Date.now() / 1000) + HOUR
     endVotingTime = startVotingTime + HOUR
-    voters = await ethers.getSigners()
-    const voterAddresses = voters.map(x => x.address)
+    const TicketSpender = await ethers.getContractFactory("TicketSpender")
+    const ticketSpender = await TicketSpender.deploy()
     const AnonymousVoting = await ethers.getContractFactory("AnonymousVoting")
     anonymousVoting = await AnonymousVoting.deploy(
-      voterAddresses, startVotingTime, endVotingTime,
-      p, t, nRoundsF, nRoundsP, C, S, M, P)
+      ticketSpender.address, 
+      voters.map(x => x.address), 
+      startVotingTime, endVotingTime,
+      p, nRoundsF, N_ROUNDS_P[1], 
+      POSEIDON_C(3)!, POSEIDON_S(3)!, 
+      POSEIDON_M(3)!, POSEIDON_P(3)!)
   })
 
   describe('voting simulation', async() => {
 
     it("should simulate the voting process", async () => {
       // create ticket and its serial number
-      const secret = new BN("012345678910")
+      const secret = new BN("12345678910")
       const ticket = poseidon([secret, secret])
       const serial = poseidon([secret, ticket])
 
@@ -82,7 +80,7 @@ describe("Tests for AnonymousVoting contract", async () => {
       await time.increase(HOUR+1)
       
       // check that winner was calculated correctly
-      const winner = await anonymousVoting.currentWinner()
+      const winner = await anonymousVoting.getWinner()
       expect(winner.toString()).to.equal("1")
     })
   })

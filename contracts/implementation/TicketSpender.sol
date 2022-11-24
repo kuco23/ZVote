@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import "./PlonkVerifier.sol";
 
 contract TicketSpender is PlonkVerifier {
-    
+
     function verifyTicketSpending(
         bytes memory proof, 
         uint256 serial, uint256 root

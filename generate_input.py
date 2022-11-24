@@ -61,7 +61,7 @@ def generateCircomInput(serial, root, ticket, secret, proof):
     })
 
 def createCircomInput(serial, root, ticket, secret, proof):
-    open("input.json", "a").close()
+    open("snark_data/input.json", "a").close()
     with open("snark_data/input.json", "w") as inpt:
         inpt.write(generateCircomInput(
             serial, root, ticket, secret, proof
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     TREE_DEPTH = 21
 
     # define secret value
-    secret = getrandbits(255)
+    secret = 12345678910
     ticket = poseidon(secret, secret)
 
     # define tickets merkle tree
