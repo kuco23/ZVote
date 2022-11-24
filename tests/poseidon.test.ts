@@ -21,11 +21,11 @@ const SBN = S.map(x => new BN(x))
 const MBN = M.map(l => l.map(x => new BN(x)))
 const PBN = P.map(l => l.map(x => new BN(x)))
 
-describe("Tests for the poseidon hash function", async () => {
+describe("Tests for Poseidon contract", async () => {
   let poseidon: any
 
   beforeEach(async() => {
-    const Poseidon = await ethers.getContractFactory("PoseidonMock")
+    const Poseidon = await ethers.getContractFactory("PoseidonTester")
     poseidon = await Poseidon.deploy(p, t, nRoundsF, nRoundsP, C, S, M, P)
   })
  

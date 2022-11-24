@@ -1,6 +1,6 @@
 pragma circom 2.0.0;
 
-include "./circomlib/circuits/poseidon.circom";
+include "../circomlib/circuits/poseidon.circom";
 
 template EqualToOneOf() {
     signal input test;
@@ -39,5 +39,3 @@ template MerkleProof (K) {
 	// verify the last hash matches the merkle root
 	poseidon[0].out === root;
 }
-
-component main {public [root]} = MerkleProof(20);

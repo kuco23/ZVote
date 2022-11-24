@@ -1,7 +1,7 @@
 from json import dumps
 from constants import POSEIDON_S, POSEIDON_C, POSEIDON_M, POSEIDON_P
 
-file = f'./constants.ts'
+file = './constants.ts'
 
 N_ROUNDS_P = [
     56, 57, 56, 60, 60, 63, 64, 63, 
@@ -60,5 +60,5 @@ export function POSEIDON_P(t: number): string[][] | undefined {{
 """
 
 open(file, 'a').close()
-with open(file, 'w') as constants_file:
-    constants_file.write(constants)
+with open(file, 'w') as constants_ts:
+    constants_ts.write(constants)

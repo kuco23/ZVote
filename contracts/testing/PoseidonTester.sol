@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "../implementation/Poseidon.sol";
 
-contract PoseidonMock is Poseidon {
+contract PoseidonTester is Poseidon {
 
     constructor(
         uint256 _p, uint256 _t,
