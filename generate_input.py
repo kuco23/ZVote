@@ -66,36 +66,40 @@ def createCircomInput(serial, root, ticket, secret, proof):
         inpt.write(generateCircomInput(
             serial, root, ticket, secret, proof
         ))
+    
+def getWitnessArguments(secret, ticket, tickets, tree_depth):
+    # get the serial number
+    serial = poseidon(secret, ticket)
+
+    # construct the Merkle tree
+    merkle_tree = MerkleTree(tree_depth)
+    for x in tickets: merkle_tree.addElement(x)
+
+    # get Merkle proof of ticket in tickets
+    ticket_idx = tickets.index(ticket)
+    merkle_proof = merkle_tree.proof(ticket_idx)
+
+    # verify the Merkle proof
+    merkle_root = merkle_tree.root()
+    merkle_tree.verifyProof(ticket, merkle_proof, merkle_root)
+
+    return {
+        "serial": serial,
+        "root": merkle_root,
+        "ticket": ticket,
+        "secret": secret,
+        "proof": merkle_proof
+    }
 
 if __name__ == '__main__':
     from random import getrandbits
     
     TREE_DEPTH = 21
 
-    # define secret value
+    # define input values
     secret = 12345678910
     ticket = poseidon(secret, secret)
+    tickets = tickets = [111, 222, 333, ticket, 444, 555]
 
-    # define tickets merkle tree
-    tickets = [111, 222, 333, ticket, 444, 555]
-
-    # construct the merkle tree out of hashed_data
-    merkle_tree = MerkleTree(TREE_DEPTH)
-    for x in tickets: merkle_tree.addElement(x)
-
-    # proving ticket is inside tickets
-    ticket_idx = tickets.index(ticket)
-    merkle_proof = merkle_tree.proof(ticket_idx)
-
-    # verify the merkle proof
-    merkle_root = merkle_tree.root()
-    merkle_tree.verifyProof(ticket, merkle_proof, merkle_root)
-
-    # calculate ticket's serial number
-    serial = poseidon(secret, ticket)
-
-    # produce circom input
-    createCircomInput(
-        serial, merkle_root, ticket, 
-        secret, merkle_proof
-    )
+    witness = getWitnessArguments(secret, ticket, tickets, TREE_DEPTH)
+    createCircomInput(**witness)

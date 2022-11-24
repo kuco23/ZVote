@@ -3,7 +3,7 @@ powersoftau=powersOfTau28_hez_final_16
 data_folder=snark_data
 
 mkdir -p $data_folder &&
-circom circuits/$circuit_name.circom  --r1cs -o $data_folder &&
+circom circuits/$circuit_name.circom --r1cs -o $data_folder &&
 snarkjs plonk setup \
     $data_folder/$circuit_name.r1cs \
     $powersoftau.ptau \

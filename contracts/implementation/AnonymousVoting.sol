@@ -15,16 +15,23 @@ struct Winner {
     uint256 votes;
 }
 
+/**
+ * @title - Anonymous Voting contract
+ * @notice A contract that allows for anonymous
+ *  voting between a fixed addresses, given at contract
+ *  initialization. Every vote is seen publicly, but the
+ *  issuer is not revealed.
+ */
 contract AnonymousVoting is MerkleTree, Poseidon {
     address[] public voters;
     mapping(uint256 => bool) internal nullified;
-    mapping(address => bool) internal claimedTicket;
+    mapping(address => bool) internal registeredTicket;
     mapping(uint256 => uint256) internal votes;
 
     Winner public winner;
     VotingPeriod public votingPeriod;
 
-    TicketSpender ticketSpender;
+    TicketSpender public ticketSpender;
 
     constructor(
         TicketSpender _ticketSpender,
@@ -49,19 +56,26 @@ contract AnonymousVoting is MerkleTree, Poseidon {
     }
 
     modifier beforeVotingPeriod() {
-        require(block.timestamp < votingPeriod.start);
+        require(
+            block.timestamp < votingPeriod.start,
+            "should be before the voting period"
+        );
         _;
     }
     modifier duringVotingPeriod() {
         require(
             block.timestamp >= votingPeriod.start && 
-            block.timestamp < votingPeriod.end
+            block.timestamp < votingPeriod.end,
+            "should be inside the voting period"
         );
         _;
     }
 
     modifier afterVotingPeriod() {
-        require(block.timestamp > votingPeriod.end);
+        require(
+            block.timestamp > votingPeriod.end,
+            "should be after the voting period"
+        );
         _;
     }
     
@@ -69,11 +83,11 @@ contract AnonymousVoting is MerkleTree, Poseidon {
         uint256 ticket
     ) external beforeVotingPeriod returns (uint256) {
         require(
-            !claimedTicket[msg.sender], 
+            !registeredTicket[msg.sender], 
             "ticket already registered"
         );
         addElement(ticket);
-        claimedTicket[msg.sender] = true;
+        registeredTicket[msg.sender] = true;
         return size-1;
     }
 
@@ -97,13 +111,22 @@ contract AnonymousVoting is MerkleTree, Poseidon {
         return winner.option;
     }
 
-    // so users can build their own merkle tree locally
+    /**
+     * @notice Allows users to fetch tickets and build
+     *   their own Merkle tree, so they can construct 
+     *   their Merkle proof locally
+     */
     function getTickets(
     ) external view returns (uint256[] memory) {
         uint256[] memory tickets = new uint256[](size);
         for (uint256 i = 0; i < size; i++)
             tickets[i] = tree[TREE_DEPTH-1][i];
         return tickets;
+    }
+
+    function getVoters(
+    ) external view returns (address[] memory) {
+        return voters;
     }
 
     function hashFunction(

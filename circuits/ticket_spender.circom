@@ -26,7 +26,6 @@ template TicketSpender(K) {
     poseidon1.out === ticket;
 
     // prove serial uniquely identifies the ticket
-    // without revealing anything about the ticket
     component poseidon2 = Poseidon(2);
     poseidon2.inputs[0] <== secret;
     poseidon2.inputs[1] <== ticket;

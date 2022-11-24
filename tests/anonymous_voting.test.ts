@@ -13,6 +13,10 @@ import {
 const snarkjs = require("snarkjs")
 
 const HOUR = 60*60
+const BEFORE_VOTING_PERIOD_MSG = "should be before the voting period"
+const DURING_VOTING_PERIOD_MSG = "should be inside the voting period"
+const AFTER_VOTING_PERIOD_MSG = "should be after the voting period"
+const TICKET_ALREADY_REGISTERED_MSG = "ticket already registered"
 
 function formatSolidityCalldata(calldata: string) {
   const i = calldata.indexOf(",")
@@ -21,7 +25,19 @@ function formatSolidityCalldata(calldata: string) {
   return { proof: proof, pub: pub }
 }
 
+// Get proof (done via python and snarkjs outside here).
+// Merkle tree has to contain the same elements as here.
+async function getSoliditySnark() {
+  const pub = JSON.parse(fs.readFileSync(
+    "./snark_data/public.json").toString())
+  const proof = JSON.parse(fs.readFileSync(
+    "./snark_data/proof.json").toString())
+  const callargs = await snarkjs.plonk.exportSolidityCallData(proof, pub)
+  return formatSolidityCalldata(callargs)
+}
+
 describe("Tests for AnonymousVoting contract", async () => {
+  let ticketSpender: any
   let anonymousVoting: any
   let voters: SignerWithAddress[]
   let startVotingTime: number
@@ -32,7 +48,7 @@ describe("Tests for AnonymousVoting contract", async () => {
     startVotingTime = Math.floor(Date.now() / 1000) + HOUR
     endVotingTime = startVotingTime + HOUR
     const TicketSpender = await ethers.getContractFactory("TicketSpender")
-    const ticketSpender = await TicketSpender.deploy()
+    ticketSpender = await TicketSpender.deploy()
     const AnonymousVoting = await ethers.getContractFactory("AnonymousVoting")
     anonymousVoting = await AnonymousVoting.deploy(
       ticketSpender.address, 
@@ -43,9 +59,55 @@ describe("Tests for AnonymousVoting contract", async () => {
       POSEIDON_M(3)!, POSEIDON_P(3)!)
   })
 
-  describe('voting simulation', async() => {
+  describe("function unit test", async () => {
+    
+    it("should correctly set the constructor arguments", async () => {
+      const ticketSpenderAddr = await anonymousVoting.ticketSpender()
+      expect(ticketSpenderAddr).to.equal(ticketSpender.address)
+      const votingPeriod = await anonymousVoting.votingPeriod()
+      expect(votingPeriod.start.toString()).to.equal(startVotingTime.toString())
+      expect(votingPeriod.end.toString()).to.equal(endVotingTime.toString())
+      const votersAddr = await anonymousVoting.getVoters()
+      expect(votersAddr.length).to.equal(voters.length)
+      for (let i = 0; i < voters.length; i++) 
+        expect(votersAddr[i]).to.equal(voters[i].address)
+    })
 
-    it("should simulate the voting process", async () => {
+    it("should fail at registering tickets inside the voting period", async () => {
+      await time.increase(HOUR+1)
+      const prms = anonymousVoting.registerTicket(0)
+      expect(prms).to.be.revertedWith(BEFORE_VOTING_PERIOD_MSG)
+    })
+
+    it("should fail at spending tickets outside the voting period", async () => {
+      const prms = anonymousVoting.spendTicket(0,0,"0x0")
+      expect(prms).to.be.revertedWith(DURING_VOTING_PERIOD_MSG)
+    })
+
+    it("should fail at getting the winner before the end of the voting period", async () => {
+      await time.increase(HOUR+1)
+      const prms = anonymousVoting.getWinner()
+      expect(prms).to.be.revertedWith(AFTER_VOTING_PERIOD_MSG)
+    })
+
+    it("should correctly register a new ticket", async () => {
+      await anonymousVoting.registerTicket(1)
+      const tickets = await anonymousVoting.getTickets()
+      expect(tickets.length).to.equal(1)
+      expect(tickets[0].toString()).to.equal("1")
+    })
+
+    it("should fail at one address registering two tickets", async () => {
+      await anonymousVoting.registerTicket(1)
+      const prms = anonymousVoting.registerTicket(2)
+      expect(prms).to.be.revertedWith(TICKET_ALREADY_REGISTERED_MSG)
+    })
+
+  })
+
+  describe("voting simulation", async() => {
+
+    it.skip("should simulate voting process", async () => {
       // create ticket and its serial number
       const secret = new BN("12345678910")
       const ticket = poseidon([secret, secret])
@@ -62,19 +124,11 @@ describe("Tests for AnonymousVoting contract", async () => {
 
       // move time to start the voting period
       await time.increase(HOUR+1)
-      
-      // get proof (done via python and snarkjs outside here)
-      // merkle tree has to contain the same elements as here
-      const pub = JSON.parse(fs.readFileSync(
-        "./snark_data/public.json").toString())
-      const proof = JSON.parse(fs.readFileSync(
-        "./snark_data/proof.json").toString())
-      const callargs = await snarkjs.plonk.exportSolidityCallData(proof, pub)
-      const realargs = formatSolidityCalldata(callargs)
-      
+          
       // spend the ticket (call contract from another account)
+      const solargs = await getSoliditySnark()
       await anonymousVoting.connect(voters[5]).spendTicket(
-          serial.toString(), 1, realargs['proof'])
+          serial.toString(), 1, solargs['proof'])
       
       // move time to end the voting period
       await time.increase(HOUR+1)
