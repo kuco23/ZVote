@@ -17,6 +17,7 @@ const BEFORE_VOTING_PERIOD_MSG = "should be before the voting period"
 const DURING_VOTING_PERIOD_MSG = "should be inside the voting period"
 const AFTER_VOTING_PERIOD_MSG = "should be after the voting period"
 const TICKET_ALREADY_REGISTERED_MSG = "ticket already registered"
+const ONLY_VOTERS = "sender has to be registered as a voter"
 
 function formatSolidityCalldata(calldata: string) {
   const i = calldata.indexOf(",")
@@ -39,13 +40,15 @@ async function getSoliditySnark() {
 describe("Tests for AnonymousVoting contract", async () => {
   let ticketSpender: any
   let anonymousVoting: any
+  let accounts: SignerWithAddress[]
   let voters: SignerWithAddress[]
   let startVotingTime: number
   let endVotingTime: number
 
   beforeEach(async() => {
-    voters = await ethers.getSigners()
-    startVotingTime = Math.floor(Date.now() / 1000) + HOUR
+    accounts = await ethers.getSigners()
+    voters = accounts.slice(0,6)
+    startVotingTime = await time.latest() + HOUR
     endVotingTime = startVotingTime + HOUR
     const TicketSpender = await ethers.getContractFactory("TicketSpender")
     ticketSpender = await TicketSpender.deploy()
@@ -59,7 +62,7 @@ describe("Tests for AnonymousVoting contract", async () => {
       POSEIDON_M(3)!, POSEIDON_P(3)!)
   })
 
-  describe("function unit test", async () => {
+  describe("function unit tests", async () => {
     
     it("should correctly set the constructor arguments", async () => {
       const ticketSpenderAddr = await anonymousVoting.ticketSpender()
@@ -103,11 +106,16 @@ describe("Tests for AnonymousVoting contract", async () => {
       expect(prms).to.be.revertedWith(TICKET_ALREADY_REGISTERED_MSG)
     })
 
+    it("should fail registering ticket from non-voter account", async () => {
+      const prms = anonymousVoting.connect(accounts[6]).registerTicket(1)
+      expect(prms).to.be.revertedWith(ONLY_VOTERS)
+    })
+
   })
 
-  describe("voting simulation", async() => {
+  describe("voting", async() => {
 
-    it.skip("should simulate voting process", async () => {
+    it("should simulate voting process", async () => {
       // create ticket and its serial number
       const secret = new BN("12345678910")
       const ticket = poseidon([secret, secret])

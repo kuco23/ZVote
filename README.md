@@ -1,7 +1,10 @@
 # Decentralized Anonymous Voting
 
 This is a simple implementation of a decentralized anonymous voting system, based on the main idea of zerocash, using zk-snarks.
-The voting system requires voters to be predefined and makes the voting results publicly known at all times. 
+The voting system requires voters to be predefined and makes the voting results publicly known at all times without revealing voter choices.
+
+> **Note:**
+> Zerocash implements a decentralized anonymous currency by making use of zk-snarks to transfer an unknown coin to an unknown recipients by nullifying the coin and making a new one that follows a correct format. Here we only nullify the unknown coin (called a ticket), which acts as casting a vote.
 
 The implementation relies heavily on the poseidon hash function,
 which has a circuit optimized for zk-snark construction.
@@ -76,10 +79,6 @@ createCircomInput(
     secret, merkle_proof
 )
 ```
-
-## In relation to zerocash
-
-Zerocash implements a decentralized anonymous currency by making use of zk-snarks to transfer an unknown coin to an unknown recipients by nullifying the coin and making a new one that follows a correct format. Here we only nullify the unknown coin (called a ticket), which acts as casting a vote.
 
 ## To-do
 - [ ] Find a way to hardcode poseidon constants in the `AnonymousVoting` contract and use them to initialise `Poseidon`,

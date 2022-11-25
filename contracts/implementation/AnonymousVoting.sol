@@ -24,9 +24,9 @@ struct Winner {
  */
 contract AnonymousVoting is MerkleTree, Poseidon {
     address[] public voters;
-    mapping(uint256 => bool) internal nullified;
-    mapping(address => bool) internal registeredTicket;
     mapping(uint256 => uint256) internal votes;
+    mapping(uint256 => bool) internal nullified;
+    mapping(address => bool) internal registered;
 
     Winner public winner;
     VotingPeriod public votingPeriod;
@@ -78,16 +78,30 @@ contract AnonymousVoting is MerkleTree, Poseidon {
         );
         _;
     }
+
+    modifier onlyVoters() {
+        bool inside = false;
+        for (uint256 i = 0; i < voters.length; i++) 
+            if (msg.sender == voters[i]) {
+                inside = true;
+                break;
+            }
+        require(
+            inside,
+            "sender has to be registered as a voter"
+        );
+        _;
+    }
     
     function registerTicket(
         uint256 ticket
-    ) external beforeVotingPeriod returns (uint256) {
+    ) external beforeVotingPeriod onlyVoters returns (uint256) {
         require(
-            !registeredTicket[msg.sender], 
+            !registered[msg.sender], 
             "ticket already registered"
         );
         addElement(ticket);
-        registeredTicket[msg.sender] = true;
+        registered[msg.sender] = true;
         return size-1;
     }
 

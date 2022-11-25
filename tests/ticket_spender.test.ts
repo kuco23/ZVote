@@ -18,7 +18,7 @@ describe("Tests for TicketSpender contract", async () => {
   let ticketSpender: any
 
   beforeEach(async() => {
-    const TicketSpender = await ethers.getContractFactory("TicketSpenderTester")
+    const TicketSpender = await ethers.getContractFactory("TicketSpender")
     ticketSpender = await TicketSpender.deploy()
   })
  
@@ -31,13 +31,13 @@ describe("Tests for TicketSpender contract", async () => {
         "./snark_data/proof.json").toString())
       const callargs = await snarkjs.plonk.exportSolidityCallData(proof, pub)
       const realargs = formatSolidityCalldata(callargs)
-      const resp1 = await ticketSpender.verifyTicketSpendingPub(
+      const resp1 = await ticketSpender.verifyTicketSpending(
         realargs.proof, realargs.pub[0], realargs.pub[1])
       expect(resp1).to.equal(true)
-      const resp2 = await ticketSpender.verifyTicketSpendingPub(
+      const resp2 = await ticketSpender.verifyTicketSpending(
         realargs.proof.replace("1", "0"), realargs.pub[0], realargs.pub[1])
       expect(resp2).to.equal(false)
-      const resp3 = await ticketSpender.verifyTicketSpendingPub(
+      const resp3 = await ticketSpender.verifyTicketSpending(
         realargs.proof, realargs.pub[1], realargs.pub[0])
       expect(resp3).to.equal(false)
     })
