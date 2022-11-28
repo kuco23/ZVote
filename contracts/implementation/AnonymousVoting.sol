@@ -106,11 +106,11 @@ contract AnonymousVoting is MerkleTree, Poseidon {
     }
 
     function spendTicket(
-        uint256 serial, uint256 option, bytes memory proof
+        uint256 option, uint256 serial, bytes memory proof
     ) external duringVotingPeriod {
         require(!nullified[serial], "ticket already spent");
         bool result = ticketSpender.verifyTicketSpending(
-            proof, serial, merkleRoot());
+            option, serial, merkleRoot(), proof);
         require(result == true, "incorrect proof");
         nullified[serial] = true;
         votes[option] += 1;

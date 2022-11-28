@@ -4,6 +4,7 @@ include "../circomlib/circuits/poseidon.circom";
 include "./merkle_proof.circom";
 
 template TicketSpender(K) {
+    signal input option;
     signal input serial;
     signal input root;
     signal input ticket;
@@ -22,7 +23,7 @@ template TicketSpender(K) {
     // prove we can unlock the ticket
     component poseidon1 = Poseidon(2);
     poseidon1.inputs[0] <== secret;
-    poseidon1.inputs[1] <== secret;
+    poseidon1.inputs[1] <== option;
     poseidon1.out === ticket;
 
     // prove serial uniquely identifies the ticket
@@ -32,4 +33,4 @@ template TicketSpender(K) {
     poseidon2.out === serial;
 }
 
-component main {public [serial, root]} = TicketSpender(20);
+component main {public [option, serial, root]} = TicketSpender(20);

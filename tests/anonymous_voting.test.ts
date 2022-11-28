@@ -5,11 +5,11 @@ import { ethers } from "hardhat"
 import { expect } from "chai"
 import BN from "bn.js"
 import * as fs from "fs"
-import { poseidon } from "../poseidon/poseidon"
+import { poseidon } from "../tsutil/poseidon"
 import { 
   p, nRoundsF, N_ROUNDS_P, 
   POSEIDON_C, POSEIDON_S, POSEIDON_M, POSEIDON_P
-} from "../poseidon/constants"
+} from "../tsutil/constants"
 const snarkjs = require("snarkjs")
 
 const HOUR = 60*60
@@ -77,7 +77,7 @@ describe("Tests for AnonymousVoting contract", async () => {
     })
 
     it("should fail at registering tickets inside the voting period", async () => {
-      await time.increase(HOUR+1)
+      await time.increase(HOUR)
       const prms = anonymousVoting.registerTicket(0)
       expect(prms).to.be.revertedWith(BEFORE_VOTING_PERIOD_MSG)
     })
@@ -88,7 +88,7 @@ describe("Tests for AnonymousVoting contract", async () => {
     })
 
     it("should fail at getting the winner before the end of the voting period", async () => {
-      await time.increase(HOUR+1)
+      await time.increase(HOUR)
       const prms = anonymousVoting.getWinner()
       expect(prms).to.be.revertedWith(AFTER_VOTING_PERIOD_MSG)
     })
@@ -117,8 +117,9 @@ describe("Tests for AnonymousVoting contract", async () => {
 
     it("should simulate voting process", async () => {
       // create ticket and its serial number
+      const option = new BN("1")
       const secret = new BN("12345678910")
-      const ticket = poseidon([secret, secret])
+      const ticket = poseidon([secret, option])
       const serial = poseidon([secret, ticket])
 
       // register voting tickets
@@ -131,15 +132,15 @@ describe("Tests for AnonymousVoting contract", async () => {
       await anonymousVoting.connect(voters[5]).registerTicket("555")
 
       // move time to start the voting period
-      await time.increase(HOUR+1)
+      await time.increase(HOUR)
           
       // spend the ticket (call contract from another account)
       const solargs = await getSoliditySnark()
       await anonymousVoting.connect(voters[5]).spendTicket(
-          serial.toString(), 1, solargs['proof'])
+          option.toString(), serial.toString(), solargs['proof'])
       
       // move time to end the voting period
-      await time.increase(HOUR+1)
+      await time.increase(HOUR)
       
       // check that winner was calculated correctly
       const winner = await anonymousVoting.getWinner()

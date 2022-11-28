@@ -2,11 +2,11 @@ import "@nomiclabs/hardhat-truffle5"
 import { ethers } from "hardhat"
 import { expect } from "chai"
 import BN from "bn.js"
-import { poseidon } from "../poseidon/poseidon"
+import { poseidon } from "../tsutil/poseidon"
 import { 
     p, nRoundsF, N_ROUNDS_P,
     POSEIDON_C, POSEIDON_S, POSEIDON_M, POSEIDON_P
-} from "../poseidon/constants"
+} from "../tsutil/constants"
   
 const t = 3 // test for chosen t (range 2 to 17)
 const nRoundsP = N_ROUNDS_P[t - 2]

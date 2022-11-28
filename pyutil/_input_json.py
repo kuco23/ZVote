@@ -1,9 +1,10 @@
 from json import dumps
-from ..poseidon.poseidon import poseidon
+from .poseidon import poseidon
 from ._merkle_tree import MerkleTree
 
-def getWitnessArguments(secret, ticket, tickets, tree_depth):
-    # get the serial number
+def getWitnessArguments(option, secret, tickets, tree_depth):
+    # get the ticket and its serial number
+    ticket = poseidon(secret, option)
     serial = poseidon(secret, ticket)
 
     # construct the Merkle tree
@@ -19,6 +20,7 @@ def getWitnessArguments(secret, ticket, tickets, tree_depth):
     merkle_tree.verifyProof(ticket, merkle_proof, merkle_root)
 
     return {
+        "option": option,
         "serial": serial,
         "root": merkle_root,
         "ticket": ticket,
@@ -26,8 +28,9 @@ def getWitnessArguments(secret, ticket, tickets, tree_depth):
         "proof": merkle_proof
     }
 
-def generateCircomInput(serial, root, ticket, secret, proof):
+def generateCircomInput(option, serial, root, ticket, secret, proof):
     return dumps({
+        "option": str(option),
         "serial": str(serial),
         "root": str(root),
         "ticket": str(ticket),
@@ -35,9 +38,9 @@ def generateCircomInput(serial, root, ticket, secret, proof):
         "proof": [[str(node) for node in pair] for pair in proof],
     })
 
-def createCircomInputJson(serial, root, ticket, secret, proof):
+def createCircomInputJson(option, serial, root, ticket, secret, proof):
     open("snark_data/input.json", "a").close()
     with open("snark_data/input.json", "w") as inpt:
         inpt.write(generateCircomInput(
-            serial, root, ticket, secret, proof
+            option, serial, root, ticket, secret, proof
         ))

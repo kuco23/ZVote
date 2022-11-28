@@ -24,25 +24,25 @@ pragma solidity >=0.7.0 <0.9.0;
 contract PlonkVerifier {
     
     uint32 constant n =   65536;
-    uint16 constant nPublic =  2;
-    uint16 constant nLagrange = 2;
+    uint16 constant nPublic =  3;
+    uint16 constant nLagrange = 3;
     
-    uint256 constant Qmx = 18084029903439447296728389579361316646267248083934203247214679796918010292999;
-    uint256 constant Qmy = 21466264600415853817078656712736429840160127434004563686970875023849525420616;
-    uint256 constant Qlx = 13129040597832584173615071997102610929218286740782782550360842701003173159177;
-    uint256 constant Qly = 6586420537644805606090550106266168171342597818354868357137266382104125165589;
-    uint256 constant Qrx = 6930770319374445275291190515127895630141191824669114295692221138959995394750;
-    uint256 constant Qry = 7948134311360777955193593909521882488578394275676751567061088829663997740292;
-    uint256 constant Qox = 21172081591849277905745665195495524072236220702605649484863011104406644930290;
-    uint256 constant Qoy = 15596436413658451650428262832344077530295697226145006206249046172893605691930;
-    uint256 constant Qcx = 13792292975048722462077118254344035042958500916915352515475077798687456104019;
-    uint256 constant Qcy = 2487278547753488832245500968103173970039985216922179884365313798366197664173;
-    uint256 constant S1x = 13671274311820697537031449596243289172531404940560206188857110121062469663136;
-    uint256 constant S1y = 7822915591979620650838301628384195870429248349813321822643399748438239355366;
-    uint256 constant S2x = 15178057442476671518033918076493560792877752364056748971855825537255537987486;
-    uint256 constant S2y = 16219906096932099980044262462066796534686189144684926664517727057349149484752;
-    uint256 constant S3x = 4773145755694202661321770000541469734415231483487642427783936380859213097537;
-    uint256 constant S3y = 7820152737065417113459900781411647628120694006625299034957727090334591888551;
+    uint256 constant Qmx = 8694262183295734848158197436695202823243560986982066999859554540762787512022;
+    uint256 constant Qmy = 12431290617947595369222369674024183438861947539030011032746446322456875794282;
+    uint256 constant Qlx = 5740895461055822675086035488199998858006181627784668548552235114369785877362;
+    uint256 constant Qly = 14089659807252181583179260843334330491975098679098224234821143446555324309755;
+    uint256 constant Qrx = 14059108322122158832828194550653623395563763296832710559234334860547600491070;
+    uint256 constant Qry = 12536648331797554077911944654039225231076703179771431646351723891040763231362;
+    uint256 constant Qox = 11788790236857488482529864679709888192334554541813976441337439967614367047192;
+    uint256 constant Qoy = 19030263395914390938954682468033113376689198561843033095988492672223530002150;
+    uint256 constant Qcx = 11000013072091059214522354213170637999307670872727901206102673773493540279701;
+    uint256 constant Qcy = 4161785783179379788751027168496405917429322510108539123782337959015937101970;
+    uint256 constant S1x = 16552345818127339539572508049780539271147784171853944778821446576985315796662;
+    uint256 constant S1y = 16764042874281416848756342914024775861760472938531969841651532570118828414269;
+    uint256 constant S2x = 21705435566296409268759580356901898765392977028768408895657226629449793998651;
+    uint256 constant S2y = 7257456387514314201526650976215315059833598790786465959494301612857466319168;
+    uint256 constant S3x = 5174383008945297615134731672888458705472633746461935494710737429801338160331;
+    uint256 constant S3y = 20320980768547268164683235629998650129231534138064192130053451455725695626641;
     uint256 constant k1 = 2;
     uint256 constant k2 = 3;
     uint256 constant X2x1 = 21831381940315734285607113342023901060522397560371972897001948545212302161822;
@@ -101,9 +101,11 @@ contract PlonkVerifier {
     
     uint16 constant pEval_l2 = 704;
     
+    uint16 constant pEval_l3 = 736;
     
     
-    uint16 constant lastMem = 736;
+    
+    uint16 constant lastMem = 768;
 
     function verifyProof(bytes memory proof, uint[] memory pubSignals) public view returns (bool) {
         assembly {
@@ -206,18 +208,20 @@ contract PlonkVerifier {
                 let b
 
                 
-                mstore( add(pMem, 736 ), mload( add( pPublic, 32)))
+                mstore( add(pMem, 768 ), mload( add( pPublic, 32)))
                 
-                mstore( add(pMem, 768 ), mload( add( pPublic, 64)))
+                mstore( add(pMem, 800 ), mload( add( pPublic, 64)))
                 
-                mstore( add(pMem, 800 ), mload( add( pProof, pA)))
-                mstore( add(pMem, 832 ), mload( add( pProof, add(pA,32))))
-                mstore( add(pMem, 864 ), mload( add( pProof, add(pA,64))))
-                mstore( add(pMem, 896 ), mload( add( pProof, add(pA,96))))
-                mstore( add(pMem, 928 ), mload( add( pProof, add(pA,128))))
-                mstore( add(pMem, 960 ), mload( add( pProof, add(pA,160))))
+                mstore( add(pMem, 832 ), mload( add( pPublic, 96)))
                 
-                b := mod(keccak256(add(pMem, lastMem), 256), q) 
+                mstore( add(pMem, 864 ), mload( add( pProof, pA)))
+                mstore( add(pMem, 896 ), mload( add( pProof, add(pA,32))))
+                mstore( add(pMem, 928 ), mload( add( pProof, add(pA,64))))
+                mstore( add(pMem, 960 ), mload( add( pProof, add(pA,96))))
+                mstore( add(pMem, 992 ), mload( add( pProof, add(pA,128))))
+                mstore( add(pMem, 1024 ), mload( add( pProof, add(pA,160))))
+                
+                b := mod(keccak256(add(pMem, lastMem), 288), q) 
                 mstore( add(pMem, pBeta), b)
                 mstore( add(pMem, pGamma), mod(keccak256(add(pMem, pBeta), 32), q))
                 mstore( add(pMem, pAlpha), mod(keccak256(add(pProof, pZ), 64), q))
@@ -322,9 +326,30 @@ contract PlonkVerifier {
                     )
                 )
                 
+                w := mulmod(w, w1, q)
                 
                 
-                inverseArray(add(pMem, pZhInv), 3 )
+                mstore(
+                    add(pMem, pEval_l3), 
+                    mulmod(
+                        n, 
+                        mod(
+                            add(
+                                sub(
+                                    mload(add(pMem, pXi)), 
+                                    w
+                                ), 
+                                q
+                            ),
+                            q
+                        ), 
+                        q
+                    )
+                )
+                
+                
+                
+                inverseArray(add(pMem, pZhInv), 4 )
                 
                 let zh := mload(add(pMem, pZh))
                 w := 1
@@ -350,6 +375,24 @@ contract PlonkVerifier {
                         w,
                         mulmod(
                             mload(add(pMem, pEval_l2)),
+                            zh,
+                            q
+                        ),
+                        q
+                    )
+                )
+                
+                
+                w := mulmod(w, w1, q)
+                
+                
+                
+                mstore(
+                    add(pMem, pEval_l3), 
+                    mulmod(
+                        w,
+                        mulmod(
+                            mload(add(pMem, pEval_l3)),
                             zh,
                             q
                         ),
@@ -389,6 +432,21 @@ contract PlonkVerifier {
                             mulmod(
                                 mload(add(pMem, pEval_l2)),
                                 mload(add(pPub, 64)),
+                                q
+                            )
+                        ),
+                        q
+                    ),
+                    q
+                )
+                 
+                pl := mod(
+                    add(
+                        sub(
+                            pl,  
+                            mulmod(
+                                mload(add(pMem, pEval_l3)),
+                                mload(add(pPub, 96)),
                                 q
                             )
                         ),

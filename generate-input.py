@@ -1,13 +1,24 @@
-from json import dumps
-from poseidon.poseidon import poseidon
-from pyutil import createCircomInputJson
+from pyutil import (
+    poseidon, getWitnessArguments,
+    createCircomInputJson
+)
 
-if __name__ == '__main__':
-    from random import getrandbits
-    
-    TREE_DEPTH = 21
+TREE_DEPTH = 21
 
-    # define input values
-    secret = 12345678910
-    ticket = poseidon(secret, secret)
-    tickets = tickets = [111, 222, 333, ticket, 444, 555]
+# define personal input values
+option = 1 # must be int
+secret = 12345678910
+
+# construct the voting ticket
+ticket = poseidon(secret, option)
+
+# fetch all voting tickets from by making
+# a view call to the smart contract
+tickets = [111, 222, 333, ticket, 444, 555]
+
+# get arguments for witness generation
+witness_args = getWitnessArguments(
+    option, secret, tickets, TREE_DEPTH)
+
+# generate circom input
+createCircomInputJson(**witness_args)

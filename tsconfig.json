@@ -13,6 +13,6 @@
       "node_modules",
       "test"
     ],
-    "include": ["./tests", "./src"],
+    "include": ["./tests", "./tsutil"],
     "files": ["./hardhat.config.ts"]
   }

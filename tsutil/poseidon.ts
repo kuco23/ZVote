@@ -1,7 +1,7 @@
 import BN from "bn.js"
 import { 
     p, N_ROUNDS_P, POSEIDON_C, POSEIDON_S, POSEIDON_M, POSEIDON_P
-  } from "../poseidon/constants"
+  } from "./constants"
 
 const pBN = new BN(p)
 

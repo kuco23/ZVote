@@ -32,13 +32,16 @@ describe("Tests for TicketSpender contract", async () => {
       const callargs = await snarkjs.plonk.exportSolidityCallData(proof, pub)
       const realargs = formatSolidityCalldata(callargs)
       const resp1 = await ticketSpender.verifyTicketSpending(
-        realargs.proof, realargs.pub[0], realargs.pub[1])
+        realargs.pub[0], realargs.pub[1], realargs.pub[2], 
+        realargs.proof)
       expect(resp1).to.equal(true)
       const resp2 = await ticketSpender.verifyTicketSpending(
-        realargs.proof.replace("1", "0"), realargs.pub[0], realargs.pub[1])
+        realargs.pub[0], realargs.pub[1], realargs.pub[2],
+        realargs.proof.replace("1", "0"))
       expect(resp2).to.equal(false)
       const resp3 = await ticketSpender.verifyTicketSpending(
-        realargs.proof, realargs.pub[1], realargs.pub[0])
+        realargs.pub[1], realargs.pub[0], realargs.pub[2], 
+        realargs.proof)
       expect(resp3).to.equal(false)
     })
 

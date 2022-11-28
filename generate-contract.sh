@@ -1,5 +1,5 @@
 circuit_name=ticket_spender
-contract_name=TicketSpenderVerifier
+contract_name=PlonkVerifier
 
 snarkjs zkey export solidityverifier \
     snark_data/${circuit_name}_final.zkey \

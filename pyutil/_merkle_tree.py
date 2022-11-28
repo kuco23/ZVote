@@ -1,5 +1,4 @@
-from json import dumps
-from ..poseidon.poseidon import poseidon
+from .poseidon import poseidon
 
 class MerkleTree:
     
