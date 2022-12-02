@@ -1,7 +1,7 @@
 {
   "name": "merkle-tree-circom",
   "version": "1.0.0",
-  "description": "This is a small implementation of a merkle proof in circom,  along with a compatible implementation of merkle proofs in python. The code implements two hash functions - sha256 and poseidon, with the latter being specifically designed to be snark friendly.",
+  "description": "This is a small implementation of a merkle proof in circom, along with a compatible implementation of merkle proofs in python. The code implements two hash functions - sha256 and poseidon, with the latter being specifically designed to be snark friendly.",
   "main": "index.js",
   "scripts": {
     "test": "yarn hardhat test",
@@ -42,6 +42,7 @@
     "web3": "^1.8.1"
   },
   "dependencies": {
+    "crypto": "^1.0.1",
     "dotenv": "^16.0.3",
     "snarkjs": "^0.5.0"
   }

@@ -1,15 +1,12 @@
-import "@nomiclabs/hardhat-truffle5"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { ethers } from "hardhat"
 import { expect } from "chai"
 import BN from "bn.js"
 import * as fs from "fs"
-import { poseidon } from "../tsutil/poseidon"
-import { 
-  p, nRoundsF, N_ROUNDS_P, 
-  POSEIDON_C, POSEIDON_S, POSEIDON_M, POSEIDON_P
-} from "../tsutil/constants"
+import { deployContract } from "../tsutil/livenet"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
+import { Contract } from "ethers";
+import { poseidon } from "../tsutil/poseidon/poseidon"
 const snarkjs = require("snarkjs")
 
 const HOUR = 60*60
@@ -38,8 +35,7 @@ async function getSoliditySnark() {
 }
 
 describe("Tests for AnonymousVoting contract", async () => {
-  let ticketSpender: any
-  let anonymousVoting: any
+  let anonymousVoting: Contract
   let accounts: SignerWithAddress[]
   let voters: SignerWithAddress[]
   let startVotingTime: number
@@ -50,23 +46,14 @@ describe("Tests for AnonymousVoting contract", async () => {
     voters = accounts.slice(0,6)
     startVotingTime = await time.latest() + HOUR
     endVotingTime = startVotingTime + HOUR
-    const TicketSpender = await ethers.getContractFactory("TicketSpender")
-    ticketSpender = await TicketSpender.deploy()
-    const AnonymousVoting = await ethers.getContractFactory("AnonymousVoting")
-    anonymousVoting = await AnonymousVoting.deploy(
-      ticketSpender.address, 
-      voters.map(x => x.address), 
-      startVotingTime, endVotingTime,
-      p, nRoundsF, N_ROUNDS_P[1], 
-      POSEIDON_C(3)!, POSEIDON_S(3)!, 
-      POSEIDON_M(3)!, POSEIDON_P(3)!)
+    anonymousVoting = await deployContract(ethers,
+      voters.map(x => x.address), startVotingTime, endVotingTime
+    )
   })
 
   describe("function unit tests", async () => {
     
     it("should correctly set the constructor arguments", async () => {
-      const ticketSpenderAddr = await anonymousVoting.ticketSpender()
-      expect(ticketSpenderAddr).to.equal(ticketSpender.address)
       const votingPeriod = await anonymousVoting.votingPeriod()
       expect(votingPeriod.start.toString()).to.equal(startVotingTime.toString())
       expect(votingPeriod.end.toString()).to.equal(endVotingTime.toString())

@@ -22,7 +22,7 @@ struct Winner {
  *  initialization. Every vote is seen publicly, but the
  *  issuer is not revealed.
  */
-contract AnonymousVoting is MerkleTree, Poseidon {
+contract AnonymousVoting is MerkleTree, Poseidon, TicketSpender {
     address[] public voters;
     mapping(uint256 => uint256) internal votes;
     mapping(uint256 => bool) internal nullified;
@@ -30,11 +30,8 @@ contract AnonymousVoting is MerkleTree, Poseidon {
 
     Winner public winner;
     VotingPeriod public votingPeriod;
-
-    TicketSpender public ticketSpender;
-
+    
     constructor(
-        TicketSpender _ticketSpender,
         address[] memory _voters,
         uint256 _startVotingTime,
         uint256 _endVotingTime,
@@ -49,7 +46,6 @@ contract AnonymousVoting is MerkleTree, Poseidon {
         _p, 3, _nRoundsF, _nRoundsP, 
         _C, _S, _M, _P
     ) { 
-        ticketSpender = _ticketSpender;
         voters = _voters;
         votingPeriod = VotingPeriod(
             _startVotingTime, _endVotingTime);
@@ -109,7 +105,7 @@ contract AnonymousVoting is MerkleTree, Poseidon {
         uint256 option, uint256 serial, bytes memory proof
     ) external duringVotingPeriod {
         require(!nullified[serial], "ticket already spent");
-        bool result = ticketSpender.verifyTicketSpending(
+        bool result = this.verifyTicketSpending(
             option, serial, merkleRoot(), proof);
         require(result == true, "incorrect proof");
         nullified[serial] = true;

@@ -1,46 +1,54 @@
-import "@nomiclabs/hardhat-truffle5"
 import { ethers } from "hardhat"
 import { expect } from "chai"
 import BN from "bn.js"
-import { poseidon } from "../tsutil/poseidon"
+import { Contract } from "ethers"
+import { MerkleTree } from "../tsutil/merkle_tree"
+import { postreidon } from "../tsutil/poseidon/poseidon"
 import { 
     p, nRoundsF, N_ROUNDS_P,
     POSEIDON_C, POSEIDON_S, POSEIDON_M, POSEIDON_P
-} from "../tsutil/constants"
-  
-const t = 3 // test for chosen t (range 2 to 17)
-const nRoundsP = N_ROUNDS_P[t - 2]
-const C = POSEIDON_C(t)!
-const S = POSEIDON_S(t)!
-const M = POSEIDON_M(t)!
-const P = POSEIDON_P(t)!
+} from "../tsutil/poseidon/constants"
+
+const depth = 21
+const t = 3
 
 describe("Tests for MerkleTree contract", async () => {
-  let merkleTree: any
+  let merkleTreeContract: Contract
+  let merkleTree: MerkleTree
 
   beforeEach(async() => {
-    const MerkleTree = await ethers.getContractFactory("MerkleTreeTester")
-    merkleTree = await MerkleTree.deploy(
-      p, t, nRoundsF, nRoundsP, C, S, M, P)
+    merkleTree = new MerkleTree(depth)
+    const MerkleTreeFactory = await ethers
+      .getContractFactory("MerkleTreeTester")
+    merkleTreeContract = await MerkleTreeFactory.deploy(
+      p, t, nRoundsF, N_ROUNDS_P[t - 2], 
+      POSEIDON_C(t)!, POSEIDON_S(t)!, 
+      POSEIDON_M(t)!, POSEIDON_P(t)!)
   })
  
   describe("Build a Merkle tree", async() => {
 
     it("should correctly insert an element", async () => {
-        await merkleTree.addElementPub(1)
-        const element = await merkleTree.getElementAt(0)
+        await merkleTreeContract.addElementPub(1)
+        const element = await merkleTreeContract.getElementAt(0)
         expect(element.toString()).to.equal("1")
     })
 
     it("should give a correct merkle root", async () => {
-        const data = [123124152, 1314, 12412, 1231]
-        const hashedData: BN[] = data.map(x => poseidon([new BN(x)]))
-        for (let x of hashedData) 
-            await merkleTree.addElementPub(x.toString())
-        const merkleRoot = await merkleTree.merkleRoot()
-        /* expect(merkleRoot.toString()).to.equal(
-            "15743069918484268926889421122003573873153157598428684671110069388320514325721"
-        ) */
+        const data = [123124152, 1231, 313131319]
+        data.map(async x => {
+          const hashed = postreidon([x.toString()])
+          merkleTree.addElement(hashed)
+          await merkleTreeContract.addElementPub(hashed)
+        })
+        const merkleRoot = await merkleTreeContract.merkleRoot()
+        expect(merkleRoot).to.equal(merkleTree.root())
+        
+        const merkleProof = merkleTree.proof(1)
+        merkleTree.verifyProof(
+          postreidon([data[1].toString()]), 
+          merkleProof, merkleRoot
+        )
         
     })
   })

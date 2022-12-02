@@ -1,6 +1,6 @@
-import "@nomiclabs/hardhat-truffle5"
 import { ethers } from "hardhat"
 import { expect } from "chai"
+import { Contract } from "ethers"
 import * as fs from "fs"
 const snarkjs = require("snarkjs")
 
@@ -15,7 +15,7 @@ function formatSolidityCalldata(calldata: string) {
 }
 
 describe("Tests for TicketSpender contract", async () => {
-  let ticketSpender: any
+  let ticketSpender: Contract
 
   beforeEach(async() => {
     const TicketSpender = await ethers.getContractFactory("TicketSpender")

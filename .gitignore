@@ -138,9 +138,11 @@ input.json
 public.json
 proof.json
 
+# node
 artifacts
 cache
 typechain-types
 
 # local
 snark_data
+user_data.json

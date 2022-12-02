@@ -158,3 +158,7 @@ export function poseidonEx(
 export function poseidon(ins: BN[]): BN {
     return poseidonEx(ins.length, 1, ins, new BN(0))[0]
 }
+
+export function postreidon(ins: string[]): string {
+    return poseidon(ins.map(x => new BN(x))).toString()
+}

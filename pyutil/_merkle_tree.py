@@ -20,7 +20,7 @@ class MerkleTree:
         for d in reversed(range(1, self.depth)):
             if (index % 2 == 0):
                 self.tree[d][index+1] = self.tree[d][index]
-            index //= 2
+            index >>= 1
             self.tree[d-1][index] = poseidon(
                 self.tree[d][2*index], 
                 self.tree[d][2*index+1]
@@ -34,7 +34,7 @@ class MerkleTree:
             d = 1 if i % 2 == 0 else -1
             l, r = self.tree[j][i], self.tree[j][i+d]
             merkle_proof[j-1] = (l, r) if d == 1 else (r, l)
-            i //= 2
+            i >>= 1
         return merkle_proof
     
     @staticmethod

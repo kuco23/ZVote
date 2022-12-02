@@ -1,14 +1,14 @@
-import "@nomiclabs/hardhat-truffle5"
 import { ethers } from "hardhat"
 import { expect } from "chai"
 import BN from "bn.js"
+import { Contract } from "ethers"
 import { 
   p, nRoundsF, N_ROUNDS_P,
   POSEIDON_C, POSEIDON_S, POSEIDON_M, POSEIDON_P
-} from "../tsutil/constants"
+} from "../tsutil/poseidon/constants"
 import { 
   poseidon as poseidonTs, ark, mix, mixLast, mixS
-} from "../tsutil/poseidon"
+} from "../tsutil/poseidon/poseidon"
 
 const t = 3 // test for chosen t (range 2 to 17)
 const nRoundsP = N_ROUNDS_P[t - 2]
@@ -21,7 +21,7 @@ const SBN = S.map(x => new BN(x))
 const MBN = M.map(l => l.map(x => new BN(x)))
 
 describe("Tests for Poseidon contract", async () => {
-  let poseidon: any
+  let poseidon: Contract
 
   beforeEach(async() => {
     const Poseidon = await ethers.getContractFactory("PoseidonTester")
