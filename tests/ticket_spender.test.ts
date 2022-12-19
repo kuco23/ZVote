@@ -1,18 +1,11 @@
 import { ethers } from "hardhat"
 import { expect } from "chai"
 import { Contract } from "ethers"
-import * as fs from "fs"
-const snarkjs = require("snarkjs")
+import { postreidon } from "../tsutil/poseidon/poseidon"
+import { MerkleTree } from "../tsutil/merkleTree"
+import { createProof, getSoliditySnark } from "../tsutil/snark"
 
-// requires snarkjs-generated files 
-// public.json and proof.json
-
-function formatSolidityCalldata(calldata: string) {
-  const i = calldata.indexOf(",")
-  const proof = calldata.slice(0, i)
-  const pub = JSON.parse(calldata.slice(i+1))
-  return { proof: proof, pub: pub }
-}
+const TREE_DEPTH = 21
 
 describe("Tests for TicketSpender contract", async () => {
   let ticketSpender: Contract
@@ -25,23 +18,43 @@ describe("Tests for TicketSpender contract", async () => {
   describe('proof verification', async() => {
 
     it("should verify a proof or fail trying", async () => {
-      const pub = JSON.parse(fs.readFileSync(
-        "./snark_data/public.json").toString())
-      const proof = JSON.parse(fs.readFileSync(
-        "./snark_data/proof.json").toString())
-      const callargs = await snarkjs.plonk.exportSolidityCallData(proof, pub)
-      const realargs = formatSolidityCalldata(callargs)
+      // create ticket and its serial number
+      const option = "1"
+      const secret = "12345678910"
+      const ticket = postreidon([secret, option])
+      const serial = postreidon([secret, ticket])
+
+      // get a ticket array example and get Merkle data
+      const tickets = ["111", "222", "333", ticket, "444", "555"]
+      const merkleTree = new MerkleTree(TREE_DEPTH)
+      tickets.map(x => merkleTree.addElement(x))
+      const merkleRoot = merkleTree.root()
+      const merkleProof = merkleTree.proof(tickets.indexOf(ticket))
+
+      const zksnark = await createProof({
+        option: option,
+        serial: serial,
+        root: merkleRoot,
+        ticket: ticket,
+        secret: secret,
+        proof: merkleProof
+      })
+      const solproof = await getSoliditySnark(
+        zksnark.proof, zksnark.publicSignals)
+      
+      // submit a correct proof
       const resp1 = await ticketSpender.verifyTicketSpending(
-        realargs.pub[0], realargs.pub[1], realargs.pub[2], 
-        realargs.proof)
+        option, serial, merkleRoot, solproof)      
       expect(resp1).to.equal(true)
+
+      // submit a slightly altered proof
       const resp2 = await ticketSpender.verifyTicketSpending(
-        realargs.pub[0], realargs.pub[1], realargs.pub[2],
-        realargs.proof.replace("1", "0"))
+        option, serial, merkleRoot, solproof.replace("1", "0"))
       expect(resp2).to.equal(false)
+
+      // submit shuffled arguments but right proof
       const resp3 = await ticketSpender.verifyTicketSpending(
-        realargs.pub[1], realargs.pub[0], realargs.pub[2], 
-        realargs.proof)
+        serial, merkleRoot, option, solproof)
       expect(resp3).to.equal(false)
     })
 

@@ -2,7 +2,7 @@ import { ethers } from "hardhat"
 import { expect } from "chai"
 import BN from "bn.js"
 import { Contract } from "ethers"
-import { MerkleTree } from "../tsutil/merkle_tree"
+import { MerkleTree } from "../tsutil/merkleTree"
 import { postreidon } from "../tsutil/poseidon/poseidon"
 import { 
     p, nRoundsF, N_ROUNDS_P,

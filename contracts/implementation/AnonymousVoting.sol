@@ -2,8 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "./TicketSpender.sol";
-import "./MerkleTree.sol";
-import "./Poseidon.sol";
+import "../interfaces/IAnonymousVoting.sol";
 
 struct VotingPeriod {
     uint256 start;
@@ -22,103 +21,110 @@ struct Winner {
  *  initialization. Every vote is seen publicly, but the
  *  issuer is not revealed.
  */
-contract AnonymousVoting is MerkleTree, Poseidon, TicketSpender {
-    address[] public voters;
-    mapping(uint256 => uint256) internal votes;
-    mapping(uint256 => bool) internal nullified;
-    mapping(address => bool) internal registered;
-
-    Winner public winner;
-    VotingPeriod public votingPeriod;
+contract AnonymousVoting is IAnonymousVoting, TicketSpender {
+    // registered elections
+    mapping(uint256 => bool) election;
     
-    constructor(
-        address[] memory _voters,
-        uint256 _startVotingTime,
-        uint256 _endVotingTime,
-        uint256 _p,
-        uint256 _nRoundsF,
-        uint256 _nRoundsP,
-        uint256[] memory _C,
-        uint256[] memory _S,
-        uint256[][] memory _M,
-        uint256[][] memory _P
-    ) Poseidon(
-        _p, 3, _nRoundsF, _nRoundsP, 
-        _C, _S, _M, _P
-    ) { 
-        voters = _voters;
-        votingPeriod = VotingPeriod(
-            _startVotingTime, _endVotingTime);
-    }
+    // election configuration
+    mapping(uint256 => address[]) public voters;
+    mapping(uint256 => VotingPeriod) votingPeriod;
+    // election ticket storage
+    mapping(uint256 => uint256[]) public tickets;
+    // election internal ticket requirements
+    mapping(uint256 => mapping(address => bool)) internal registered;
+    mapping(uint256 => mapping(uint256 => bool)) internal nullified;
 
-    modifier beforeVotingPeriod() {
+    // votes indexed by (electionId, MerkleRoot, option)
+    mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))) internal votes;
+    // winner indexed by (electionId, MerkleRoot)
+    mapping(uint256 => mapping(uint256 => Winner)) public winner;
+
+    // merkle root by election (ideally unique)
+    mapping(uint256 => uint256) merkleRoots;
+    mapping(uint256 => bool) sameRoots;
+
+    modifier beforeVotingPeriod(uint256 electionId) {
         require(
-            block.timestamp < votingPeriod.start,
-            "should be before the voting period"
-        );
+            block.timestamp < votingPeriod[electionId].start,
+            "should be before the voting period");
         _;
     }
-    modifier duringVotingPeriod() {
+    modifier duringVotingPeriod(uint256 electionId) {
+        VotingPeriod memory electionVotingPeriod = votingPeriod[electionId];
         require(
-            block.timestamp >= votingPeriod.start && 
-            block.timestamp < votingPeriod.end,
-            "should be inside the voting period"
-        );
+            block.timestamp >= electionVotingPeriod.start && 
+            block.timestamp < electionVotingPeriod.end,
+            "should be inside the voting period");
         _;
     }
 
-    modifier afterVotingPeriod() {
+    modifier afterVotingPeriod(uint256 electionId) {
         require(
-            block.timestamp > votingPeriod.end,
-            "should be after the voting period"
-        );
+            block.timestamp > votingPeriod[electionId].end,
+            "should be after the voting period");
         _;
     }
 
-    modifier onlyVoters() {
+    modifier onlyVoters(uint256 electionId) {
+        address[] memory electionVoters = voters[electionId];
         bool inside = false;
-        for (uint256 i = 0; i < voters.length; i++) 
-            if (msg.sender == voters[i]) {
+        for (uint256 i = 0; i < electionVoters.length; i++) 
+            if (msg.sender == electionVoters[i]) {
                 inside = true;
                 break;
             }
-        require(
-            inside,
-            "sender has to be registered as a voter"
-        );
+        require(inside, "sender has to be registered as a voter");
         _;
+    }
+
+    function registerElection(
+        uint256 electionId,
+        address[] memory _voters, 
+        uint256 start, uint256 end
+    ) external override {
+        require(!election[electionId], "election already registered");
+        election[electionId] = true;
+        voters[electionId] = _voters;
+        votingPeriod[electionId] = VotingPeriod(start, end);
     }
     
     function registerTicket(
-        uint256 ticket
-    ) external beforeVotingPeriod onlyVoters returns (uint256) {
+        uint256 electionId, uint256 ticket
+    ) beforeVotingPeriod(electionId) onlyVoters(electionId) 
+    external override {
+        require(election[electionId], "election not registered");
         require(
-            !registered[msg.sender], 
-            "ticket already registered"
-        );
-        addElement(ticket);
-        registered[msg.sender] = true;
-        return size-1;
+            !registered[electionId][msg.sender], 
+            "voter already registered ticket");
+        registered[electionId][msg.sender] = true;
+        tickets[electionId].push(ticket);
     }
 
     function spendTicket(
+        uint256 electionId, uint256 merkleRoot,
         uint256 option, uint256 serial, bytes memory proof
-    ) external duringVotingPeriod {
-        require(!nullified[serial], "ticket already spent");
+    ) duringVotingPeriod(electionId) external override {
+        require(election[electionId], "election not registered");
+        require(!nullified[electionId][serial], "ticket already spent");
         bool result = this.verifyTicketSpending(
-            option, serial, merkleRoot(), proof);
+            option, serial, merkleRoot, proof);
         require(result == true, "incorrect proof");
-        nullified[serial] = true;
-        votes[option] += 1;
-        if (votes[option] > winner.votes) {
-            winner.option = option;
-            winner.votes = votes[option];
+        nullified[electionId][serial] = true;
+        votes[electionId][merkleRoot][option]++;
+        // assign election winner by the used merkle root
+        uint256 optionVotes = votes[electionId][merkleRoot][option];
+        if (optionVotes > winner[electionId][merkleRoot].votes) {
+            winner[electionId][merkleRoot].option = option;
+            winner[electionId][merkleRoot].votes = optionVotes;
         }
     }
 
     function getWinner(
-    ) external view afterVotingPeriod returns (uint256) {
-        return winner.option;
+        uint256 electionId, uint256 _merkleRoot
+    ) afterVotingPeriod(electionId)
+    external view override returns (uint256) {
+        require(election[electionId], "election not registered");
+        return winner[electionId][_merkleRoot].option;
     }
 
     /**
@@ -127,24 +133,8 @@ contract AnonymousVoting is MerkleTree, Poseidon, TicketSpender {
      *   their Merkle proof locally
      */
     function getTickets(
-    ) external view returns (uint256[] memory) {
-        uint256[] memory tickets = new uint256[](size);
-        for (uint256 i = 0; i < size; i++)
-            tickets[i] = tree[TREE_DEPTH-1][i];
-        return tickets;
-    }
-
-    function getVoters(
-    ) external view returns (address[] memory) {
-        return voters;
-    }
-
-    function hashFunction(
-        uint256 a, uint256 b
-    ) internal view override returns (uint256) {
-        uint256[] memory inputs = new uint256[](2);
-        inputs[0] = a;
-        inputs[1] = b;
-        return poseidon(inputs);
+        uint256 electionId
+    ) external view override returns (uint256[] memory) {
+        return tickets[electionId];
     }
 }

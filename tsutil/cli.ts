@@ -1,15 +1,13 @@
 require("dotenv").config()
 import { task } from "hardhat/config";
 import * as fs from "fs"
-import { postreidon } from "./poseidon/poseidon"
-import { MerkleTree } from "./merkle_tree";
+import * as crypto from "crypto"
+import BN from "bn.js"
 import { 
-  deployContract, getTickets, 
-  registerTicket, spendTicket
-} from "./livenet"
-const snarkjs = require("snarkjs")
-
-const TREE_DEPTH = 21
+  deployContract, fullSpendTicket,
+  registerTicket, getWinner, registerElection, 
+  getTickets, getMerkleRoot
+} from "./api"
 
 function getUserData() {
   fs.appendFileSync("./user_data.json", "")
@@ -26,85 +24,107 @@ function updateUserData(
   fs.writeFileSync("./user_data.json", JSON.stringify(data))
 }
 
-async function createProof(pub: any) {
-  return await snarkjs.plonk.fullProve(pub,
-    "./snark_data/ticket_spender_js/ticket_spender.wasm",
-    "./snark_data/ticket_spender_final.zkey"
-  )
-}
-
-async function getSoliditySnark(pub: any, proof: any) {
-  const callargs = await snarkjs.plonk
-    .exportSolidityCallData(proof, pub)
-  return callargs.slice(0, callargs.indexOf(","))
-}
-
 task("deploy", "Deployment of AnonymousVoting contract")
+  .setAction(async (args, hre) => {
+    const contract = await deployContract(hre.ethers)
+    updateUserData(["contract"], [contract.address])
+    console.log(`deployed at: ${contract.address}`)
+  })
+
+task("election", "Define a new anonymous election")
   .addParam("voters")
+  .addOptionalParam("electionId")
   .addOptionalParam("start")
   .addOptionalParam("end")
   .addOptionalParam("duration")
+  .addOptionalParam("contract")
   .setAction(async (args, hre) => {
+    const data = getUserData()
+    if (args.electionId === undefined) {
+      const id = crypto.randomBytes(32)
+      args.electionId = new BN(id).toString()
+    }
     if (args.duration !== undefined) {
       const duration = Number(args.duration)
       args.start = Math.floor(Date.now() / 1000) + duration
       args.end = args.start + duration
     }
-    const contract = await deployContract(
-      hre.ethers, args.voters.split(" "),
-      args.start, args.end)
-    updateUserData(["contract"], [contract.address])
-    console.log(contract.address)
+    await registerElection(
+      hre.ethers,
+      args.electionId,
+      args.voters.split(" "),
+      args.start, args.end, 
+      args.contract ?? data.contract
+    )
+    updateUserData(["electionId"], [args.electionId])
+    console.log(`election id: ${args.electionId}`)
   })
 
 task("register", "Register a voting ticket")
   .addParam("option")
+  .addOptionalParam("secret")
+  .addOptionalParam("electionId")
+  .addOptionalParam("contract")
   .setAction(async (args, hre) => {
     const data = getUserData()
+    if (args.secret === undefined) {
+      const sec = crypto.randomBytes(32)
+      args.secret = new BN(sec).toString()
+    }
+    const signers = await hre.ethers.getSigners()
     const { secret, ticket, serial } = await registerTicket(
-      hre.ethers, args.option, data.contract)
+      hre.ethers, 
+      args.electionId ?? data.electionId, 
+      args.secret, 
+      args.option,
+      args.contract ?? data.contract, 
+      signers[0]
+    )
     updateUserData(
       ["option", "secret", "ticket", "serial"], 
-      [args.option, secret, ticket, serial])
+      [args.option, secret, ticket, serial]
+    )
+    console.log(`secret: ${secret}`)
   })
 
-task("spend", "Spend a ticket with a zk-snark")
+task("vote", "Vote by spending your ticket with a zk-snark")
+  .addOptionalParam("option")
+  .addOptionalParam("secret")
+  .addOptionalParam("electionId")
+  .addOptionalParam("contract")
   .setAction(async (args, hre) => {
     const data = getUserData()
+    const signers = await hre.ethers.getSigners()
+    const { merkleRoot } = await fullSpendTicket(
+      hre.ethers, 
+      args.electionId ?? data.electionId, 
+      args.secret ?? data.secret, 
+      args.option ?? data.option, 
+      args.contract ?? data.contract, 
+      signers[1]
+    )
+    updateUserData(["root"], [merkleRoot])
+  })
 
-    // get user values from data
-    const secret = data.secret
-    const option = data.option
-    const ticket = postreidon([secret, option])
-    const serial = postreidon([secret, ticket])
-
-    // get tickets from the smart contract
-    const tickets: string[] = await getTickets(
-      hre.ethers, data.contract)
-
-    // build a Merkle tree and obtain the root
-    const merkleTree = new MerkleTree(TREE_DEPTH)
-    tickets.map(x => merkleTree.addElement(x))
-    const merkleRoot = merkleTree.root()
-    
-    // get the Merkle proof of "ticket in tickets"
-    const index = tickets.indexOf(ticket)
-    const merkleProof = merkleTree.proof(index)
-    
-    // build a zksnark for solidity
-    const zksnark = await createProof({
-      option: option,
-      serial: serial,
-      root: merkleRoot,
-      ticket: ticket,
-      secret: secret,
-      proof: merkleProof
-    })
-    const solproof = await getSoliditySnark(
-      zksnark.proof, zksnark.publicSignals)
-    
-    // call the contract to spend the ticket
-    await spendTicket(
-      hre.ethers, option, serial, 
-      solproof, data.contract)
+task("winner", "Get winner after voting ends")
+  .addOptionalParam("electionId")
+  .addOptionalParam("contract")
+  .setAction(async (args, hre) => {
+    const data = getUserData()
+    const signers = await hre.ethers.getSigners()
+    if (data.root === undefined) {
+      data.root = await getMerkleRoot(
+        hre.ethers,
+        args.electionId ?? data.electionId,
+        args.contract ?? data.contract,
+        signers[0]
+      )
+    }
+    const winner = await getWinner(
+      hre.ethers, 
+      data.root, 
+      args.electionId ?? data.electionId, 
+      args.contract ?? data.contract
+    )
+    console.log(`winner is ${winner}`)
   })

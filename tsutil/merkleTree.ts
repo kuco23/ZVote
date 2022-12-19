@@ -13,7 +13,7 @@ export class MerkleTree {
         this._size = 0
     }
 
-    root() {
+    root(): string {
         return this.tree[0][0]
     }
 
@@ -32,7 +32,7 @@ export class MerkleTree {
         this._size += 1
     }
 
-    proof(i: number) {
+    proof(i: number): string[][] {
         let merkleProof: string[][] = []
         for (let i = 0; i < this.depth-1; i++) 
             merkleProof.push([""])

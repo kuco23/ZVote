@@ -10,4 +10,4 @@ snarkjs plonk setup \
 &&
 snarkjs zkey export verificationkey \
     snark_data/${circuit_name}_final.zkey \
-    snark_data/verification_key.json \
+    snark_data/verification_key.json
