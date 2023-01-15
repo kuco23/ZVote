@@ -8,8 +8,7 @@ import "@nomiclabs/hardhat-web3"
 import "./tsutil/cli"
 import "hardhat-gas-reporter"
 
-const voterAccount = process.env.PRIVATE_KEY2!
-const votingAccount = process.env.PRIVATE_KEY1!
+const accounts = JSON.parse(process.env.PRIVATE_KEYS!)
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -30,17 +29,17 @@ const config: HardhatUserConfig = {
   networks: {
     coston: {
       url: "https://coston-api.flare.network/ext/C/rpc",
-      accounts: [voterAccount, votingAccount],
+      accounts: accounts,
       chainId:  16
     },
     costwo: {
       url: "https://coston2-api.flare.network/ext/C/rpc",
-      accounts: [voterAccount, votingAccount],
+      accounts: accounts,
       chainId: 114
     },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
-      accounts: [voterAccount, votingAccount],
+      accounts: accounts,
       chainId: 43113
     }
   }

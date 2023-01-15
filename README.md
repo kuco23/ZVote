@@ -19,10 +19,9 @@ and download a one-time trusted setup [here](https://hermez.s3-eu-west-1.amazona
 ```sh
 sh generate-setup.sh
 ``` 
-Then paste into `.env` file two private keys that will be used to call the contract - one will be a voter address, the other will be used to anonymously spend the ticket. E.g.
-```env
-PRIVATE_KEY1=0x82269c48441421acbc608d61d43861f9c55532a39c2829bb29559b9be8f66938
-PRIVATE_KEY2=0xca64e5b7a2d468e85207631ffee95fc0acc87ac653b4ffe39312b1631a928cfb
+Then paste into `.env` file the private keys that will be used to sign transactions. There should be at least two - one to register a ticket and another that can spend that ticket anonymously. Ideally the account that spends the ticket should not be connected to the voter in any way.
+```txt
+PRIVATE_KEYS = ["0x82269c48441421acbc608d61d43861f9c55532a39c2829bb29559b9be8f66938","0xca64e5b7a2d468e85207631ffee95fc0acc87ac653b4ffe39312b1631a928cfb"]
 ```
 
 ## Voting flow
@@ -36,8 +35,8 @@ After the voting contract is deployed, the voting flow is as follows:
 You can use hardhat's cli app to do the steps above.
 First, you can deploy the contract as
 ```powershell
-yarn hardhat deploy 
-    --network costwo
+yarn hardhat deploy
+    --network <costwo | fuji>
 ```
 which outputs the deployed contract's address.
 Then you can register an election with
@@ -48,6 +47,7 @@ yarn hardhat election
     --start <unix>
     --end <unix>
     --contract <string>
+    --signer <number>
     --network <costwo | fuji>
 ```
 Ticket registering is then done via
@@ -57,6 +57,7 @@ yarn hardhat register
     --option <number>
     --election-id <number>
     --contract <string>
+    --signer <number>
     --network <costwo | fuji>
 ```
 Finally casting the vote can be done with
@@ -66,20 +67,22 @@ yarn hardhat vote
     --option <number>
     --election-id <number>
     --contract <string>
+    --signer <number>
     --network <costwo | fuji>
 ```
-This fetches the logged contract address, secret value, ticket, its serial and from the contract all registered tickets. Then it uses those values to construct a zk-snark and sends it to the contract. After the voting period you can fetch the winner
+This fetches the logged contract address, secret value, ticket, its serial and from the contract all registered tickets. Then it uses those values to construct a zk-snark and sends it to the contract. After the voting period ends, you can fetch the winner with
 ```powershell
 yarn hardhat winner
     --election-id <number>
     --contract <string>
+    --signer <number>
     --network costwo
 ```
 
 > **Note:**
 > For the theory to work, the contract should calculate the Merkle root of a registered tickets' Merkle tree (of some fixed depth). To avoid gas fees, this is not done, and each election tracks voting at each Merkle root passed along the vote. So, winners are indexed by election id and the Merkle root.
 
-For easier usage, the app constantly logs your previous cli parameters and uses them in further cli runs, as seen in [examples](#examples).
+To see a concreate example of the usage, see [examples](#examples).
 
 ## Raw Contract Usage
 
@@ -137,43 +140,59 @@ const solproof = await getSoliditySnark(
 
 ## Examples
 
-Here it is shown how to use the cli app's storage functionality to make voting easier on Flare's costwo (coston2) network.
+Here is an example of voting on fuji (Avalanche testnet) network, using the contract deployed at `0xa66F33E726A5E8dC6E42e94079794eD879279708`.
 
 ```powershell
-yarn hardhat deploy 
-    --network costwo
+yarn hardhat election \
+    --election-id 512 \
+    --start now+60 \
+    --end now+180 \
+    --voters "0x7d5e4A9CFD6068Fc282d86CBe342a4517eD69422 0x409E6415f3f8656e093F8a5Fed48872474231C30" \
+    --contract 0xa66F33E726A5E8dC6E42e94079794eD879279708 \
+    --signer 0 \
+    --network fuji
 ```
 ```powershell
-yarn hardhat election
-    --voters "0x7d5e4A9CFD6068Fc282d86CBe342a4517eD69422 0x409E6415f3f8656e093F8a5Fed48872474231C30"
-    --duration 300
-    --network costwo
+yarn hardhat register \
+    --option 23 \
+    --secret "11054812941044457585219289267184674311117003953631" \
+    --election-id 512 \
+    --contract 0xa66F33E726A5E8dC6E42e94079794eD879279708 \
+    --signer 0 \
+    --network fuji 
 ```
 ```powershell
-yarn hardhat register
-    --option 1
-    --network costwo
+sleep 60
 ```
-Wait for the voting period to start and then run
 ```powershell
-yarn hardhat vote
-    --network costwo
+yarn hardhat vote \
+    --option 23 \
+    --secret "11054812941044457585219289267184674311117003953631" \
+    --election-id 512 \
+    --contract 0xa66F33E726A5E8dC6E42e94079794eD879279708 \
+    --signer 1 \
+    --network fuji
 ```
-Wait for the voting period to end and then call
 ```powershell
-yarn hardhat winner 
-    --network costwo
+sleep 120
 ```
-It should output 1.
+```powershell
+yarn hardhat winner \
+    --election-id 512 \
+    --contract 0xa66F33E726A5E8dC6E42e94079794eD879279708 \
+    --signer 1 \
+    --network fuji
+```
+It should output `winner is 23`.
 
 > **Note:**
-> Values are generated / stored automatically. 
-Also duration parameter sets the election start to `now + duration` and election end to `now + 2 duration`.
+> Values `election-id` and `secret` can be ommited when registering a new election and ticket, as they are then generated randomly and outputed in the terminal.
 
 ## Testing
-To test, run
+To test only the anonymous voting contract and its dependencies, run
 ```powershell
-yarn test tests/*
+yarn test tests/anonymous_voting.test.ts
+yarn test tests/ticket_spender.test.ts
 ```
 
 ## To-do

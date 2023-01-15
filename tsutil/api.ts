@@ -32,24 +32,24 @@ export async function registerElection(
   voters: string[],
   startVotingTime: string | number, 
   endVotingTime: string | number,
-  contractAddr: string
+  contractAddr: string,
+  signer: SignerWithAddress
 ) {
   const anonymousVoting = await contractAt(ethers, contractAddr)
-  await anonymousVoting.registerElection(
+  await anonymousVoting.connect(signer).registerElection(
     electionId, voters, startVotingTime, endVotingTime)
 }
 
 export async function registerTicket(
   ethers: any, electionId: string, 
   secret: string, option: string, 
-  contractAddr: string, signer: SignerWithAddress
+  contractAddr: string, 
+  signer: SignerWithAddress
 ) {
   const ticket = postreidon([secret, option])
   const serial = postreidon([secret, ticket])
   const anonymousVoting = await contractAt(ethers, contractAddr)
-  await anonymousVoting
-    .connect(signer)
-    .registerTicket(electionId, ticket)
+  await anonymousVoting.connect(signer).registerTicket(electionId, ticket)
   return {
     secret: secret.toString(),
     ticket: ticket,
@@ -70,7 +70,7 @@ export async function fullSpendTicket(
   // get tickets from the smart contract
   const tickets: string[] = await getTickets(
     ethers, electionId, contractAddr, signer)
-
+  
   // get Merkle proof and Merkle root of ticket array
   const index = tickets.indexOf(ticket)
   const merkleTree = getMerkleTree(tickets)
