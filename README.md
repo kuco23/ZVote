@@ -134,13 +134,11 @@ const solproof = await getSoliditySnark(
     zksnark.proof, zksnark.publicSignals
 )
 ```
-
-> **Note:** 
-> The Merkle tree uses poseidon hash function, the tools to produce tree, proof and root are included in `tsutil/merkleTree.ts`.
+The Merkle tree uses poseidon hash function, the tools to produce tree, proof and root are included in `tsutil/merkleTree.ts`.
 
 ## Examples
 
-Here is an example of voting on fuji (Avalanche testnet) network, using the contract deployed at `0xa66F33E726A5E8dC6E42e94079794eD879279708`.
+Here is an example of voting on fuji (Avalanche testnet) network, using the private keys from our previous `.env` and the contract deployed at `0xa66F33E726A5E8dC6E42e94079794eD879279708`.
 
 ```powershell
 yarn hardhat election \
