@@ -86,7 +86,7 @@ To see a concreate example of the usage, see [examples](#examples).
 
 ## Raw Contract Usage
 
-## Registering an election
+### Registering an election
 An election is registered by calling `registerElection` and passing the parameters:
 - `electionId`: a 256-bit number that identifies your election (should be random to not collide with any other ids);
 - `voters`: an array of eligible voter addresses;
@@ -101,7 +101,7 @@ Before registering a ticket you should pick a secret 256-bit number and your vot
 This adds your ticket to the list of all registered tickets.
 
 > **Warn:** 
-> Ticket can be registered only from eligible addresses and only once. They can't be deleted or replaced.
+> Ticket can be registered only from eligible addresses and each address can register only one ticket. Once registered they can't be deleted or replaced.
 
 ### Spending the ticket
 Once the voting period starts, you can spend your ticket by calling `spendTicket` with the following parameters:
@@ -138,11 +138,11 @@ The Merkle tree uses poseidon hash function, the tools to produce tree, proof an
 
 ## Examples
 
-Here is an example of voting on fuji (Avalanche testnet) network, using the private keys from our previous `.env` and the contract deployed at `0xa66F33E726A5E8dC6E42e94079794eD879279708`.
+Here is an example of voting on fuji (Avalanche testnet) network, using the private keys from our previous `.env` and the contract deployed on fuji at [`0xa66F33E726A5E8dC6E42e94079794eD879279708`](https://testnet.avascan.info/blockchain/all/address/0xa66F33E726A5E8dC6E42e94079794eD879279708/transactions).
 
 ```powershell
 yarn hardhat election \
-    --election-id 512 \
+    --election-id 513 \
     --start now+60 \
     --end now+180 \
     --voters "0x7d5e4A9CFD6068Fc282d86CBe342a4517eD69422 0x409E6415f3f8656e093F8a5Fed48872474231C30" \
@@ -154,7 +154,7 @@ yarn hardhat election \
 yarn hardhat register \
     --option 23 \
     --secret "11054812941044457585219289267184674311117003953631" \
-    --election-id 512 \
+    --election-id 513 \
     --contract 0xa66F33E726A5E8dC6E42e94079794eD879279708 \
     --signer 0 \
     --network fuji 
@@ -166,7 +166,7 @@ sleep 60
 yarn hardhat vote \
     --option 23 \
     --secret "11054812941044457585219289267184674311117003953631" \
-    --election-id 512 \
+    --election-id 513 \
     --contract 0xa66F33E726A5E8dC6E42e94079794eD879279708 \
     --signer 1 \
     --network fuji
@@ -176,7 +176,7 @@ sleep 120
 ```
 ```powershell
 yarn hardhat winner \
-    --election-id 512 \
+    --election-id 513 \
     --contract 0xa66F33E726A5E8dC6E42e94079794eD879279708 \
     --signer 1 \
     --network fuji

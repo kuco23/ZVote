@@ -120,8 +120,7 @@ describe("Tests for AnonymousVoting contract", async () => {
       await anonymousVoting.connect(voters[1]).registerTicket(1,"111")
       await anonymousVoting.connect(voters[2]).registerTicket(1,"222")
       await anonymousVoting.connect(voters[3]).registerTicket(1,"333")
-      await anonymousVoting.connect(voters[0]).registerTicket(
-        1, ticket.toString())
+      await anonymousVoting.connect(voters[0]).registerTicket(1, ticket)
       await anonymousVoting.connect(voters[4]).registerTicket(1,"444")
       await anonymousVoting.connect(voters[5]).registerTicket(1,"555")
 
