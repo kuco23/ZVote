@@ -1,10 +1,10 @@
-# Decentralized Anonymous Voting
+# ZVote
 
-This is a simple implementation of a decentralized anonymous voting system, based on the main idea of zerocash, using zk-snarks.
+This is a simple implementation of a decentralized anonymous voting system, based on the main idea of ZCash, using zk-snarks.
 The voting system requires voters to be predefined and makes the voting results publicly known at all times without revealing voter choices.
 
 > **Note:**
-> Zerocash implements a decentralized anonymous currency by making use of zk-snarks to transfer an unknown coin to an unknown recipients by nullifying the coin and making a new one that follows a correct format. Here we only nullify the unknown coin (called a ticket), which acts as casting a vote.
+> ZCash implements a decentralized anonymous currency by making use of zk-snarks to transfer an unknown coin to an unknown recipients by nullifying the coin and making a new one that follows a correct format. Here we only nullify the unknown coin (called a ticket), which acts as casting a vote.
 
 The implementation relies heavily on the poseidon hash function,
 which has a circuit optimized for zk-snark construction.
@@ -76,7 +76,7 @@ yarn hardhat winner
     --election-id <number>
     --contract <string>
     --signer <number>
-    --network costwo
+    --network <costwo | fuji>
 ```
 
 > **Note:**
